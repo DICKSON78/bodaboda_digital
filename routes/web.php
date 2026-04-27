@@ -23,6 +23,12 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Password Reset Routes
+Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
+Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/reset-password/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 Route::get('/riders/online', [App\Http\Controllers\LocationController::class, 'getAllOnlineRiders'])->name('riders.online');
 Route::get('/api/locations', [App\Http\Controllers\LocationController::class, 'getLocations']);
 
@@ -67,9 +73,19 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/rides/{ride}/rate', [App\Http\Controllers\RatingController::class, 'store'])->name('ratings.store');
 
     // Admin Routes
-    Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+        Route::get('/riders', [AdminController::class, 'riders'])->name('riders');
+        Route::get('/riders/{rider}', [AdminController::class, 'showRider'])->name('riders.show');
+        Route::get('/riders/{rider}/edit', [AdminController::class, 'editRider'])->name('riders.edit');
+        Route::put('/riders/{rider}', [AdminController::class, 'updateRider'])->name('riders.update');
         Route::post('/rider/{rider}/approve', [AdminController::class, 'approveRider'])->name('rider.approve');
         Route::post('/rider/{rider}/reject', [AdminController::class, 'rejectRider'])->name('rider.reject');
+        Route::post('/rider/{rider}/suspend', [AdminController::class, 'suspendRider'])->name('rider.suspend');
+        Route::post('/rider/{rider}/activate', [AdminController::class, 'activateRider'])->name('rider.activate');
+        Route::delete('/rider/{rider}', [AdminController::class, 'deleteRider'])->name('rider.delete');
+        Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
+        Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
+        Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
     });
 });

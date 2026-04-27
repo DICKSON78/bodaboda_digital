@@ -108,8 +108,8 @@
                     @else
                         <div class="flex items-center space-x-6">
                             <a href="{{ route('rides.create') }}" class="text-xs font-black text-primary hover:underline uppercase tracking-widest">Find a Ride</a>
-                            <button onclick="openRiderLogin()" class="text-xs font-black text-text-secondary hover:text-primary transition uppercase tracking-widest">Rider Login</button>
-                            <button onclick="openRiderRegister()" class="btn-primary px-8 py-4 text-xs uppercase tracking-widest">Become a Rider</button>
+                            <a href="{{ route('login') }}" class="text-xs font-black text-text-secondary hover:text-primary transition uppercase tracking-widest">Login</a>
+                            <a href="{{ route('rider.apply') }}" class="btn-primary px-8 py-4 text-xs uppercase tracking-widest">Become a Rider</a>
                         </div>
                     @endauth
                 </div>

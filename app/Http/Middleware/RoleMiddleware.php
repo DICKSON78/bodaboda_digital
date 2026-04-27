@@ -15,8 +15,14 @@ class RoleMiddleware
      */
     public function handle(Request $request, Closure $next, string $role): Response
     {
-        if (!$request->user() || $request->user()->role !== $role) {
-            abort(403, 'Unauthorized action.');
+        // Check if user is authenticated
+        if (!auth()->check()) {
+            abort(401, 'Unauthenticated.');
+        }
+        
+        // Check if user has the required role
+        if (auth()->user()->role !== $role) {
+            abort(403, 'Unauthorized action. Required role: ' . $role . ', Current role: ' . auth()->user()->role);
         }
         
         return $next($request);
