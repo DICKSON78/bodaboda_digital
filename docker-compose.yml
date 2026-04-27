@@ -1,0 +1,46 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: bodaboda-app
+    container_name: bodaboda-app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./.env.docker:/var/www/.env
+
+  db:
+    image: mysql:8.0
+    container_name: bodaboda-db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: bodaboda
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: root
+      MYSQL_USER: bodaboda_user
+    volumes:
+      - bodaboda-dbdata:/var/lib/mysql/
+
+  nginx:
+    image: nginx:alpine
+    container_name: bodaboda-nginx
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+
+volumes:
+  bodaboda-dbdata:
+    driver: local

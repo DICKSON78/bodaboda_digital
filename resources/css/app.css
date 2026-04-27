@@ -1,0 +1,40 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+    
+    --color-primary: #2F6B3F;
+    --color-primary-dark: #255732;
+    --color-background: #EAEFEF;
+    --color-secondary-green: #3E8E5A;
+    --color-accent: #F4A261;
+    --color-text-primary: #1A1A1A;
+    --color-text-secondary: #6B7280;
+    --color-error: #E63946;
+    --color-success: #2A9D8F;
+}
+
+@layer components {
+    .btn-primary {
+        @apply bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary-dark transition duration-300 active:scale-95;
+    }
+    
+    .card {
+        @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6;
+    }
+    
+    .status-badge {
+        @apply px-3 py-1 rounded-full text-xs font-bold uppercase;
+    }
+}
+
+@layer base {
+    body {
+        @apply bg-background text-text-primary;
+    }
+}
