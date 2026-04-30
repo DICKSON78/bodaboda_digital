@@ -1,113 +1,162 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="py-12">
+<div class="py-24 honeycomb min-h-screen">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Profile Card -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex items-center mb-6">
-                    <img src="{{ auth()->user()->avatar }}" alt="{{ auth()->user()->name }}" class="h-16 w-16 rounded-full border-2 border-primary/20">
-                    <div class="ml-4">
-                        <h2 class="text-xl font-bold">{{ auth()->user()->name }}</h2>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize">
-                            {{ auth()->user()->role }}
-                        </span>
+        
+        <!-- Welcome Header -->
+        <div class="mb-12 animate-in fade-in slide-in-from-top duration-700">
+            <div class="badge-pill mb-4">
+                <span class="badge-dot"></span>
+                <span class="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Live Portal</span>
+            </div>
+            <h1 class="text-4xl md:text-6xl font-black text-text-primary tracking-tighter uppercase leading-none">
+                Habari, <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary-green">{{ explode(' ', auth()->user()->name)[0] }}!</span>
+            </h1>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column: Profile & Quick Stats -->
+            <div class="space-y-8 animate-in fade-in slide-in-from-left duration-700 delay-100">
+                <!-- Profile Card -->
+                <div class="scn-card">
+                    <div class="scn-card-header border-b border-slate-50 bg-slate-50/30">
+                        <div class="flex items-center gap-4">
+                            <div class="relative">
+                                <img src="{{ auth()->user()->avatar }}" alt="{{ auth()->user()->name }}" class="h-16 w-16 rounded-xl border-2 border-white shadow-md object-cover">
+                                <div class="absolute -bottom-1 -right-1 h-4 w-4 bg-emerald-500 border-2 border-white rounded-full"></div>
+                            </div>
+                            <div>
+                                <h2 class="text-sm font-black text-slate-900 uppercase tracking-tight">{{ auth()->user()->name }}</h2>
+                                <p class="text-[9px] font-bold text-primary uppercase tracking-widest mt-1">{{ auth()->user()->role }}</p>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                
-                @if(auth()->user()->role === 'passenger')
-                    <div class="space-y-4">
-                        <a href="{{ route('rides.create') }}" class="block w-full text-center py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition">
-                            Request a Ride
-                        </a>
-                        @if(!auth()->user()->rider)
-                            <a href="{{ route('rider.apply') }}" class="block w-full text-center py-3 border border-primary text-primary rounded-lg font-semibold hover:bg-primary/5 transition">
-                                Apply to be a Rider
-                            </a>
-                        @else
-                            <div class="p-3 bg-yellow-50 text-yellow-700 text-sm rounded-lg text-center font-medium">
-                                Rider Application Pending
+                    <div class="scn-card-content pt-6">
+                        @if(auth()->user()->role === 'passenger')
+                            <div class="space-y-3">
+                                <a href="{{ route('rides.create') }}" class="btn-premium w-full !rounded-xl !py-4 flex items-center justify-center gap-2 !text-[11px] !font-black !tracking-widest">
+                                    REQUEST A RIDE
+                                    <i class="fas fa-arrow-right text-[10px]"></i>
+                                </a>
+                                @if(!auth()->user()->rider)
+                                    <a href="{{ route('rider.apply') }}" class="block w-full text-center py-3 border border-slate-200 text-slate-600 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-slate-50 transition">
+                                        Become a Rider
+                                    </a>
+                                @else
+                                    <div class="p-3 bg-amber-50 border border-amber-100 text-amber-700 text-[9px] rounded-xl text-center font-black uppercase tracking-widest">
+                                        Application Pending
+                                    </div>
+                                @endif
+                            </div>
+                        @elseif(auth()->user()->role === 'rider')
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="p-4 bg-slate-50/50 rounded-xl border border-slate-100 text-center">
+                                        <div class="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-1">Earnings</div>
+                                        <div class="text-base font-black text-primary">TZS {{ number_format($stats['total_earned']) }}</div>
+                                    </div>
+                                    <div class="p-4 bg-slate-50/50 rounded-xl border border-slate-100 text-center">
+                                        <div class="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-1">Rating</div>
+                                        <div class="text-base font-black text-amber-500">{{ number_format($stats['avg_rating'], 1) }} ⭐</div>
+                                    </div>
+                                </div>
+                                
+                                <form action="{{ route('rider.toggle') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="w-full py-4 !rounded-xl !text-[10px] !font-black !uppercase !tracking-widest shadow-lg transition duration-300 {{ auth()->user()->rider->status === 'online' ? 'bg-rose-500 text-white shadow-rose-500/20' : 'bg-emerald-500 text-white shadow-emerald-500/20' }}">
+                                        Go {{ auth()->user()->rider->status === 'online' ? 'Offline' : 'Online' }}
+                                    </button>
+                                </form>
                             </div>
                         @endif
                     </div>
-                @elseif(auth()->user()->role === 'rider')
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="p-3 bg-gray-50 rounded-lg text-center">
-                                <div class="text-xs text-text-secondary uppercase font-bold">Earnings</div>
-                                <div class="text-lg font-bold text-primary">TZS {{ number_format($stats['total_earned']) }}</div>
-                            </div>
-                            <div class="p-3 bg-gray-50 rounded-lg text-center">
-                                <div class="text-xs text-text-secondary uppercase font-bold">Rating</div>
-                                <div class="text-lg font-bold text-accent">{{ number_format($stats['avg_rating'], 1) }} ⭐</div>
-                            </div>
-                        </div>
-                        
-                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                            <span class="text-sm font-medium">Status</span>
-                            <span class="text-{{ auth()->user()->rider->status === 'online' ? 'success' : 'text-secondary' }} font-bold uppercase">
-                                {{ auth()->user()->rider->status }}
-                            </span>
-                        </div>
-                        <form action="{{ route('rider.toggle') }}" method="POST">
-                            @csrf
-                            <button type="submit" class="w-full py-3 {{ auth()->user()->rider->status === 'online' ? 'bg-error' : 'bg-success' }} text-white rounded-lg font-semibold hover:opacity-90 transition">
-                                Go {{ auth()->user()->rider->status === 'online' ? 'Offline' : 'Online' }}
-                            </button>
-                        </form>
-                    </div>
-                @endif
-            </div>
+                </div>
 
-            <!-- Rider Request Notifications -->
-            @if(auth()->user()->role === 'rider')
-            <div class="md:col-span-2 space-y-6">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 class="text-lg font-bold mb-4">Ride Requests</h3>
-                    <div id="ride-requests-container">
-                        <div class="text-center py-8 text-text-secondary">
-                            <div class="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-4">
-                                🛵
-                            </div>
-                            <p class="font-medium">Waiting for ride requests...</p>
-                            <p class="text-sm text-text-secondary mt-2">You'll receive notifications when passengers request rides</p>
+                <!-- App Download Card -->
+                <div class="scn-card bg-primary group border-0 shadow-xl shadow-primary/20">
+                    <div class="scn-card-header">
+                        <h3 class="scn-card-title !text-white !font-black !uppercase !tracking-tight">Mobile App</h3>
+                        <p class="text-white/70 text-[10px] font-medium leading-relaxed mt-1">Take BodaBoda everywhere with our upcoming mobile application.</p>
+                    </div>
+                    <div class="scn-card-content">
+                        <div class="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5">
+                            <span class="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span>
+                            <span class="text-[8px] font-black text-white uppercase tracking-widest">Coming Soon</span>
                         </div>
                     </div>
                 </div>
             </div>
-            @endif
 
-            <!-- Ride History -->
-            <div class="md:col-span-2 space-y-6">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 class="text-lg font-bold mb-4">Recent Activity</h3>
-                    
-                    @if($recentRides->isEmpty())
-                        <div class="text-center py-12 text-text-secondary italic">
-                            No recent rides found.
+            <!-- Right Column: Main Content -->
+            <div class="lg:col-span-2 space-y-8 animate-in fade-in slide-in-from-right duration-700 delay-200">
+                
+                @if(auth()->user()->role === 'rider')
+                    <!-- Rider Request Notifications -->
+                    <div class="scn-card">
+                        <div class="scn-card-header border-b border-slate-50 bg-slate-50/30">
+                            <div class="flex items-center justify-between">
+                                <h3 class="scn-card-title !text-sm !font-black !uppercase !tracking-tight">Active Requests</h3>
+                                <div class="badge-pill !bg-emerald-50 !border-emerald-100">
+                                    <span class="badge-dot !bg-emerald-500"></span>
+                                    <span class="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Listening</span>
+                                </div>
+                            </div>
                         </div>
-                    @else
-                        <div class="space-y-4">
-                            @foreach($recentRides as $ride)
-                                <a href="{{ route('rides.show', $ride) }}" class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition border border-transparent hover:border-gray-200">
-                                    <div class="flex items-center">
-                                        <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary mr-4 text-xl">
-                                            🛵
-                                        </div>
-                                        <div>
-                                            <div class="font-bold">Ride #{{ $ride->id }}</div>
-                                            <div class="text-xs text-text-secondary">{{ $ride->created_at->diffForHumans() }} • {{ $ride->status }}</div>
-                                        </div>
+                        <div class="scn-card-content p-0">
+                            <div id="ride-requests-container">
+                                <div class="text-center py-12 text-slate-400">
+                                    <div class="h-16 w-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mx-auto mb-4">
+                                        <i class="fas fa-bolt text-2xl animate-pulse"></i>
                                     </div>
-                                    <div class="text-right">
-                                        <div class="font-bold text-primary">TZS {{ number_format($ride->fare) }}</div>
-                                        <div class="text-xs text-text-secondary">View Details →</div>
-                                    </div>
-                                </a>
-                            @endforeach
+                                    <p class="font-black uppercase tracking-widest text-[10px]">Searching for rides...</p>
+                                </div>
+                            </div>
                         </div>
-                    @endif
+                    </div>
+                @endif
+
+                <!-- Ride History -->
+                <div class="scn-card">
+                    <div class="scn-card-header border-b border-slate-50">
+                        <div class="flex items-center justify-between">
+                            <h3 class="scn-card-title !text-sm !font-black !uppercase !tracking-tight">Recent Activity</h3>
+                            <a href="#" class="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">View All</a>
+                        </div>
+                    </div>
+                    <div class="scn-card-content p-0">
+                        @if($recentRides->isEmpty())
+                            <div class="text-center py-16 text-slate-400 italic">
+                                <div class="text-3xl mb-3 opacity-20">🛵</div>
+                                <p class="font-bold uppercase tracking-widest text-[10px]">No rides yet.</p>
+                            </div>
+                        @else
+                            <div class="divide-y divide-slate-50">
+                                @foreach($recentRides as $ride)
+                                    <a href="{{ route('rides.show', $ride) }}" class="flex items-center justify-between p-5 hover:bg-slate-50/50 transition duration-300 group">
+                                        <div class="flex items-center gap-4">
+                                            <div class="h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 text-xl group-hover:bg-primary group-hover:text-white transition duration-500">
+                                                <i class="fas fa-motorcycle"></i>
+                                            </div>
+                                            <div>
+                                                <div class="font-black text-slate-900 uppercase tracking-tight text-xs">Ride #{{ $ride->id }}</div>
+                                                <div class="flex items-center gap-2 mt-1">
+                                                    <span class="text-[9px] font-bold text-slate-400">{{ $ride->created_at->diffForHumans() }}</span>
+                                                    <span class="h-1 w-1 rounded-full bg-slate-200"></span>
+                                                    <span class="text-[8px] font-black uppercase tracking-widest text-primary">{{ $ride->status }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-base font-black text-primary">TZS {{ number_format($ride->fare) }}</div>
+                                            <div class="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1 group-hover:text-primary transition">Details →</div>
+                                        </div>
+                                    </a>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

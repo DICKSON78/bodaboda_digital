@@ -2,566 +2,350 @@
 
 @section('title', 'Dashboard - BodaBoda Admin Panel')
 @section('page-title', 'Dashboard')
-@section('page-subtitle', 'Manage riders and track performance')
+@section('page-subtitle', 'Welcome back, ' . auth()->user()->name)
 
 @section('content')
-<!-- Stats Cards - KKKTAGAPE STYLE -->
-<div class="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
-    <div class="card">
-        <div class="flex items-center justify-between p-4 md:p-6">
-            <div>
-                <p class="text-sm font-medium text-gray-700">Total Riders</p>
-                <p class="mt-1 text-2xl md:text-3xl font-semibold text-gray-900">{{ $totalRiders }}</p>
-                <p class="mt-1 text-xs md:text-sm text-gray-500 flex items-center">
-                    <span class="text-green-600 mr-1"><i class="fas fa-users"></i></span>
-                    <span>{{ $approvedRiders }} approved</span>
-                </p>
+<!-- SHADC Cards - Uniform Green Design (#2F6B3F) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Card 1: Active Fleet -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-[#2F6B3F]/5 to-white rounded-2xl shadow-lg border border-[#2F6B3F]/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-[#2F6B3F]/10 rounded-full -mr-10 -mt-10"></div>
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-[#2F6B3F] rounded-xl shadow-lg">
+                    <i class="fas fa-motorcycle text-white text-xl"></i>
+                </div>
+                <span class="text-3xl font-black text-[#2F6B3F]">{{ number_format($totalRiders) }}</span>
             </div>
-            <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <i class="fas fa-users text-primary text-lg md:text-xl"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="card bg-white rounded-xl border border-gray-200 shadow-sm p-4 md:p-6 hover:shadow-lg transition-shadow duration-200">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-700">Online Riders</p>
-                <p class="mt-1 text-2xl md:text-3xl font-semibold text-gray-900">{{ $onlineRiders }}</p>
-                <p class="mt-1 text-xs md:text-sm text-gray-500 flex items-center">
-                    <span class="text-green-600 mr-1"><i class="fas fa-circle"></i></span>
-                    <span>Currently active</span>
-                </p>
-            </div>
-            <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-success/10 flex items-center justify-center">
-                <i class="fas fa-circle text-success text-lg md:text-xl"></i>
+            <h3 class="text-slate-700 font-bold text-sm mb-1">ACTIVE FLEET</h3>
+            <div class="flex items-center justify-between">
+                <p class="text-xs text-slate-500">Verified operators</p>
+                <span class="text-xs font-bold text-[#2F6B3F]">{{ $approvedRiders }} verified</span>
             </div>
         </div>
     </div>
 
-    <div class="card bg-white rounded-xl border border-gray-200 shadow-sm p-4 md:p-6 hover:shadow-lg transition-shadow duration-200">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-700">Total Rides</p>
-                <p class="mt-1 text-2xl md:text-3xl font-semibold text-gray-900">{{ $totalRides }}</p>
-                <p class="mt-1 text-xs md:text-sm text-gray-500 flex items-center">
-                    <span class="text-blue-600 mr-1"><i class="fas fa-motorcycle"></i></span>
-                    <span>{{ $completedRides }} completed</span>
-                </p>
+    <!-- Card 2: Consumer Base -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-[#2F6B3F]/5 to-white rounded-2xl shadow-lg border border-[#2F6B3F]/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-[#2F6B3F]/10 rounded-full -mr-10 -mt-10"></div>
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-[#2F6B3F] rounded-xl shadow-lg">
+                    <i class="fas fa-users text-white text-xl"></i>
+                </div>
+                <span class="text-3xl font-black text-[#2F6B3F]">{{ number_format($totalClients ?? 0) }}</span>
             </div>
-            <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-                <i class="fas fa-motorcycle text-accent text-lg md:text-xl"></i>
+            <h3 class="text-slate-700 font-bold text-sm mb-1">CONSUMER BASE</h3>
+            <div class="flex items-center justify-between">
+                <p class="text-xs text-slate-500">Active users</p>
+                <span class="text-xs font-bold text-[#2F6B3F]">+4.2% growth</span>
             </div>
         </div>
     </div>
 
-    <div class="card bg-white rounded-xl border border-gray-200 shadow-sm p-4 md:p-6 hover:shadow-lg transition-shadow duration-200">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-700">Pending</p>
-                <p class="mt-1 text-2xl md:text-3xl font-semibold text-yellow-600">{{ $pendingRiders->count() }}</p>
-                <p class="mt-1 text-xs md:text-sm text-gray-500 flex items-center">
-                    <span class="text-orange-500 mr-1"><i class="fas fa-clock"></i></span>
-                    <span>Applications waiting</span>
-                </p>
+    <!-- Card 3: Trip Velocity -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-[#2F6B3F]/5 to-white rounded-2xl shadow-lg border border-[#2F6B3F]/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-[#2F6B3F]/10 rounded-full -mr-10 -mt-10"></div>
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-[#2F6B3F] rounded-xl shadow-lg">
+                    <i class="fas fa-route text-white text-xl"></i>
+                </div>
+                <span class="text-3xl font-black text-[#2F6B3F]">{{ number_format($totalRides) }}</span>
             </div>
-            <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-warning/10 flex items-center justify-center">
-                <i class="fas fa-clock text-warning text-lg md:text-xl"></i>
+            <h3 class="text-slate-700 font-bold text-sm mb-1">TRIP VELOCITY</h3>
+            <div class="flex items-center justify-between">
+                <p class="text-xs text-slate-500">Total journeys</p>
+                <span class="text-xs font-bold text-[#2F6B3F]">{{ $completedRides }} completed</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: Fiscal Yield -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-[#2F6B3F]/5 to-white rounded-2xl shadow-lg border border-[#2F6B3F]/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-[#2F6B3F]/10 rounded-full -mr-10 -mt-10"></div>
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-[#2F6B3F] rounded-xl shadow-lg">
+                    <i class="fas fa-wallet text-white text-xl"></i>
+                </div>
+                <span class="text-2xl font-black text-[#2F6B3F]">TZS {{ number_format($monthlyRevenue ?? 0, 0) }}</span>
+            </div>
+            <h3 class="text-slate-700 font-bold text-sm mb-1">FISCAL YIELD</h3>
+            <div class="flex items-center justify-between">
+                <p class="text-xs text-slate-500">Current month</p>
+                <span class="text-xs font-bold text-[#2F6B3F]">MTD revenue</span>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="mb-6 md:mb-8">
-    <h3 class="text-lg font-medium text-gray-700 mb-4 flex items-center">
-        <i class="fas fa-bolt text-primary mr-2"></i> Quick Actions
-    </h3>
-    <div class="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-        <!-- Manage Riders -->
-        <a href="{{ route('admin.riders') }}" class="card bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 p-4 md:p-6 cursor-pointer block">
-            <div class="flex items-center">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-lg flex items-center justify-center mr-3 md:mr-4">
-                    <i class="fas fa-users text-primary text-lg md:text-xl"></i>
-                </div>
+<!-- Quick Actions - Normal Cards with Green Theme (#2F6B3F) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <a href="{{ route('admin.riders') }}" class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-[#2F6B3F]/20 hover:border-[#2F6B3F]">
+        <div class="p-5 flex items-center">
+            <div class="w-14 h-14 bg-[#2F6B3F] rounded-xl flex items-center justify-center mr-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-motorcycle text-2xl text-white"></i>
+            </div>
+            <div>
+                <p class="text-base font-black text-slate-900 group-hover:text-[#2F6B3F] transition-colors">Manage Riders</p>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">Verification Portal →</p>
+            </div>
+        </div>
+    </a>
+
+    <a href="{{ route('admin.clients') }}" class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-[#2F6B3F]/20 hover:border-[#2F6B3F]">
+        <div class="p-5 flex items-center">
+            <div class="w-14 h-14 bg-[#2F6B3F] rounded-xl flex items-center justify-center mr-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-users text-2xl text-white"></i>
+            </div>
+            <div>
+                <p class="text-base font-black text-slate-900 group-hover:text-[#2F6B3F] transition-colors">Manage Clients</p>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">Consumer Database →</p>
+            </div>
+        </div>
+    </a>
+
+    <a href="{{ route('admin.analytics') }}" class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-[#2F6B3F]/20 hover:border-[#2F6B3F]">
+        <div class="p-5 flex items-center">
+            <div class="w-14 h-14 bg-[#2F6B3F] rounded-xl flex items-center justify-center mr-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-chart-line text-2xl text-white"></i>
+            </div>
+            <div>
+                <p class="text-base font-black text-slate-900 group-hover:text-[#2F6B3F] transition-colors">View Analytics</p>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">Intelligence Suite →</p>
+            </div>
+        </div>
+    </a>
+</div>
+
+<!-- Revenue Chart + Event Stream -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+    <!-- Revenue Velocity Chart - White Header -->
+    <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200">
+            <div class="flex items-center justify-between">
                 <div>
-                    <h4 class="font-semibold text-gray-900">Manage Riders</h4>
-                    <p class="text-xs text-gray-500 mt-1">View and edit riders</p>
+                    <h3 class="text-slate-900 font-bold text-lg">Revenue Extraction Velocity</h3>
+                    <p class="text-slate-500 text-sm">Weekly fiscal performance</p>
+                </div>
+                <div class="px-3 py-1 bg-slate-100 rounded-lg">
+                    <span class="text-slate-600 text-xs font-bold uppercase tracking-wider">Live Stream</span>
                 </div>
             </div>
-        </a>
+        </div>
+        <div class="p-6">
+            <div class="h-[350px] w-full">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
 
-        <!-- View Analytics -->
-        <a href="{{ route('admin.analytics') }}" class="card bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 p-4 md:p-6 cursor-pointer block">
-            <div class="flex items-center">
-                <div class="w-10 h-10 md:w-12 md:h-12 bg-accent/10 rounded-lg flex items-center justify-center mr-3 md:mr-4">
-                    <i class="fas fa-chart-bar text-accent text-lg md:text-xl"></i>
-                </div>
+    <!-- Event Stream - White Background -->
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 bg-white">
+            <div class="flex items-center justify-between">
                 <div>
-                    <h4 class="font-semibold text-gray-900">Analytics</h4>
-                    <p class="text-xs text-gray-500 mt-1">View statistics</p>
+                    <h3 class="text-slate-900 font-bold text-lg">Event Stream</h3>
+                    <p class="text-slate-500 text-sm">Live activity feed</p>
+                </div>
+                <div class="animate-pulse">
+                    <div class="w-3 h-3 bg-[#2F6B3F] rounded-full"></div>
                 </div>
             </div>
-        </a>
-    </div>
-</div>
-
-<!-- Charts and Recent Activity - KKKTAGAPE STYLE -->
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6 md:mb-8">
-    <!-- Monthly Revenue Chart -->
-    <div class="card">
-        <div class="flex flex-col gap-3 mb-4 p-4 md:p-6">
-            <!-- Header with Title and Total -->
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                <h3 class="text-lg font-medium text-gray-700 flex items-center">
-                    <i class="fas fa-chart-line text-primary mr-2"></i>
-                    Mapato ya Miezi 6 Iliyopita
-                </h3>
-                <div class="text-sm text-gray-600">
-                    <i class="fas fa-coins mr-1"></i>
-                    Jumla: <span class="font-semibold text-primary-600">TZS {{ number_format($monthlyIncome ?? 0, 0) }}</span>
-                </div>
-            </div>
-
-            <!-- Filters -->
-            <div class="flex flex-wrap items-center gap-2">
-                <div class="flex items-center gap-2">
-                    <label for="yearFilter" class="text-sm text-gray-600">Mwaka:</label>
-                    <select id="yearFilter" class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                        @php
-                            $currentYear = date('Y');
-                            $startYear = 2020;
-                        @endphp
-                        @for($year = $currentYear; $year >= $startYear; $year--)
-                            <option value="{{ $year }}" {{ $year == $currentYear ? 'selected' : '' }}>{{ $year }}</option>
-                        @endfor
-                    </select>
-                </div>
-
-                <div class="flex items-center gap-2">
-                    <label for="periodFilter" class="text-sm text-gray-600">Kipindi:</label>
-                    <select id="periodFilter" class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                        <option value="last_6_months" selected>Miezi 6 Iliyopita</option>
-                        <option value="this_year">Mwaka Huu</option>
-                        <option value="custom_year">Mwaka Mzima</option>
-                    </select>
-                </div>
-
-                <span id="loadingIndicator" class="text-xs text-gray-500 hidden">
-                    <i class="fas fa-spinner fa-spin"></i> Inapakia...
-                </span>
-            </div>
         </div>
-        <div class="h-48 md:h-64 relative p-4 md:p-6">
-            @php
-                $hasData = ($monthlyIncome ?? 0) > 0;
-            @endphp
-            @if($hasData)
-                <canvas id="revenueLineChart"></canvas>
-            @else
-                <div class="w-full h-full flex items-center justify-center">
-                    <div class="text-center">
-                        <i class="fas fa-chart-line text-4xl text-gray-300 mb-2"></i>
-                        <p class="text-gray-500 text-sm">Hakuna data ya mapato</p>
-                    </div>
-                </div>
-            @endif
-        </div>
-    </div>
-
-    <!-- Recent Activity -->
-    <div class="card">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2 p-4 md:p-6">
-            <h3 class="text-lg font-medium text-gray-700 flex items-center">
-                <i class="fas fa-history text-primary mr-2"></i>
-                Shughuli Za Hivi Karibuni
-            </h3>
-        </div>
-        <div class="p-4 md:p-6">
-            <div class="space-y-3 md:space-y-4">
-                @forelse($recentApplications->take(2) as $rider)
-                <div class="flex items-start hover:bg-gray-50 p-2 rounded-lg transition-colors duration-200">
-                    <div class="w-8 h-8 md:w-10 md:h-10 bg-success/10 text-success rounded-lg flex items-center justify-center mr-3 md:mr-4 flex-shrink-0">
-                        <i class="fas fa-user-plus text-sm md:text-base"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-medium text-gray-900 text-sm md:text-base truncate">Wapandaaji mpya: {{ $rider->user->name }}</p>
-                        <p class="text-xs md:text-sm text-gray-500">{{ $rider->created_at->diffForHumans() }}</p>
-                    </div>
-                </div>
-                @empty
-                @endforelse
-
-                @forelse($recentRides->take(1) as $ride)
-                <div class="flex items-start hover:bg-gray-50 p-2 rounded-lg transition-colors duration-200">
-                    <div class="w-8 h-8 md:w-10 md:h-10 bg-accent/10 text-accent rounded-lg flex items-center justify-center mr-3 md:mr-4 flex-shrink-0">
-                        <i class="fas fa-motorcycle text-sm md:text-base"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-medium text-gray-900 text-sm md:text-base truncate">
-                            Safiri: TZS {{ number_format($ride->fare, 0) }}
-                        </p>
-                        <p class="text-xs md:text-sm text-gray-500">{{ $ride->created_at->diffForHumans() }}</p>
-                    </div>
-                </div>
-                @empty
-                @endforelse
-
-                @if($recentApplications->isEmpty() && $recentRides->isEmpty())
-                <div class="text-center py-8">
-                    <i class="fas fa-inbox text-4xl text-gray-300 mb-2"></i>
-                    <p class="text-gray-500 text-sm">Hakuna shughuli za hivi karibuni</p>
-                </div>
-                @endif
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-    <!-- Recent Applications -->
-    <div class="card bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div class="p-4 md:p-6 border-b border-gray-100">
-            <h3 class="text-lg font-medium text-gray-700 flex items-center">
-                <i class="fas fa-user-plus text-primary mr-2"></i>
-                Recent Applications
-            </h3>
-        </div>
-        <div class="p-4 md:p-6">
-            @if($recentApplications->isEmpty())
-                <div class="text-center py-8">
-                    <div class="h-12 w-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 mx-auto mb-4">
-                        <i class="fas fa-user-plus text-xl"></i>
-                    </div>
-                    <h4 class="text-lg font-semibold text-gray-700 mb-2">No Recent Applications</h4>
-                    <p class="text-gray-500">No new rider applications in the last 5 days.</p>
-                </div>
-            @else
-                <div class="space-y-3">
-                    @foreach($recentApplications as $rider)
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                            <div class="flex items-center space-x-3">
-                                <img src="{{ $rider->user->avatar }}" class="h-8 w-8 rounded-lg">
-                                <div>
-                                    <p class="font-semibold text-gray-700 text-sm">{{ $rider->user->name }}</p>
-                                    <p class="text-xs text-gray-500">{{ $rider->user->email }}</p>
-                                </div>
+        <div class="p-0 max-h-[400px] overflow-y-auto">
+            <div class="divide-y divide-slate-100">
+                @foreach($recentRides->take(8) as $ride)
+                <div class="p-4 hover:bg-slate-50 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-motorcycle text-[#2F6B3F] text-sm"></i>
                             </div>
-                            <div class="flex items-center space-x-2">
-                                @if($rider->is_approved)
-                                    <span class="px-2 py-1 bg-success/10 text-success text-xs font-bold rounded-lg">Approved</span>
-                                @else
-                                    <span class="px-2 py-1 bg-warning/10 text-warning text-xs font-bold rounded-lg">Pending</span>
-                                @endif
-                                <a href="{{ route('admin.riders.show', $rider) }}" class="text-primary hover:text-primary/80">
-                                    <i class="fas fa-arrow-right"></i>
-                                </a>
+                            <div>
+                                <div class="text-sm font-bold text-slate-900">{{ $ride->rider->user->name ?? 'Operator' }}</div>
+                                <div class="text-xs text-slate-500">{{ $ride->created_at->diffForHumans() }}</div>
                             </div>
                         </div>
-                    @endforeach
-                </div>
-            @endif
-        </div>
-    </div>
-
-    <!-- Recent Rides -->
-    <div class="card bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div class="p-4 md:p-6 border-b border-gray-100">
-            <h3 class="text-lg font-medium text-gray-700 flex items-center">
-                <i class="fas fa-motorcycle text-primary mr-2"></i>
-                Recent Rides
-            </h3>
-        </div>
-        <div class="p-4 md:p-6">
-            @if($recentRides->isEmpty())
-                <div class="text-center py-8">
-                    <div class="h-12 w-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 mx-auto mb-4">
-                        <i class="fas fa-motorcycle text-xl"></i>
-                    </div>
-                    <h4 class="text-lg font-semibold text-gray-700 mb-2">No Recent Rides</h4>
-                    <p class="text-gray-500">No rides have been completed recently.</p>
-                </div>
-            @else
-                <div class="space-y-3">
-                    @foreach($recentRides as $ride)
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                            <div class="flex items-center space-x-3">
-                                <div class="h-8 w-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-motorcycle text-primary text-sm"></i>
-                                </div>
-                                <div>
-                                    <p class="font-semibold text-gray-700 text-sm">Ride #{{ $ride->id }}</p>
-                                    <p class="text-xs text-gray-500">{{ $ride->created_at->format('M d, Y - h:i A') }}</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                @if($ride->status === 'completed')
-                                    <span class="px-2 py-1 bg-success/10 text-success text-xs font-bold rounded-lg">Completed</span>
-                                    <p class="text-sm font-bold text-primary mt-1">TZS {{ number_format($ride->fare, 0) }}</p>
-                                @elseif($ride->status === 'cancelled')
-                                    <span class="px-2 py-1 bg-error/10 text-error text-xs font-bold rounded-lg">Cancelled</span>
-                                @else
-                                    <span class="px-2 py-1 bg-warning/10 text-warning text-xs font-bold rounded-lg">{{ ucfirst($ride->status) }}</span>
-                                @endif
-                            </div>
+                        <div class="text-right">
+                            <div class="text-sm font-black text-[#2F6B3F]">TZS {{ number_format($ride->fare, 0) }}</div>
                         </div>
-                    @endforeach
+                    </div>
                 </div>
-            @endif
+                @endforeach
+            </div>
+        </div>
+        <div class="p-4 bg-slate-50 border-t border-slate-100">
+            <a href="{{ route('admin.rides') }}" class="block text-center py-2 bg-[#2F6B3F] hover:bg-[#235031] text-white rounded-lg text-xs font-black uppercase tracking-wider transition-colors">
+                Full Operational Audit →
+            </a>
         </div>
     </div>
 </div>
 
-<!-- Pending Applications -->
-<div class="card bg-white rounded-xl border border-gray-200 shadow-sm mt-6 md:mt-8">
-    <div class="bg-gradient-to-r from-primary to-secondary-green p-6 md:p-8">
+<!-- Verification Queue - Using scn-table format -->
+<div class="scn-card">
+    <div class="scn-card-header border-b border-slate-100 bg-slate-50/30">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight mb-2">Pending Applications</h2>
-                <p class="text-white/80 text-sm">{{ $pendingRiders->count() }} riders waiting approval</p>
+                <h3 class="scn-card-title">Verification Queue</h3>
+                <p class="scn-card-description">Riders awaiting security clearance and platform access</p>
             </div>
-            <div class="h-14 w-14 bg-white/20 rounded-xl flex items-center justify-center">
-                <i class="fas fa-user-plus text-white text-xl"></i>
+            <div class="h-10 w-10 rounded-xl bg-amber-500 flex items-center justify-center text-white shadow-sm shadow-amber-500/20">
+                <i class="fas fa-shield-alt text-sm"></i>
             </div>
         </div>
     </div>
     
-    @if($pendingRiders->isEmpty())
-        <div class="p-12 md:p-16 text-center">
-            <div class="h-16 w-16 bg-success/10 rounded-2xl flex items-center justify-center text-success mx-auto mb-6">
-                <i class="fas fa-check-circle text-2xl"></i>
-            </div>
-            <h3 class="text-xl font-bold text-gray-700 mb-2">All Clear!</h3>
-            <p class="text-gray-500">No pending rider applications</p>
-        </div>
-    @else
-        <div class="p-6 md:p-8">
-            <div class="space-y-4 md:space-y-6">
-                @foreach($pendingRiders as $rider)
-                    <div class="bg-gray-50 rounded-xl p-4 md:p-6 hover:bg-gray-100 transition duration-300">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-4 md:space-x-6">
-                                <img src="{{ $rider->user->avatar }}" class="h-12 w-12 md:h-16 md:w-16 rounded-xl border-2 border-white shadow-lg">
-                                <div>
-                                    <h4 class="text-base md:text-lg font-bold text-gray-800">{{ $rider->user->name }}</h4>
-                                    <p class="text-sm text-gray-600 font-medium mb-2">{{ $rider->user->email }}</p>
-                                    <div class="flex flex-col md:flex-row md:space-x-6 text-xs">
-                                        <div class="flex items-center text-gray-600 mb-1 md:mb-0">
-                                            <i class="fas fa-id-card text-primary mr-2"></i>
-                                            <span class="font-medium">License:</span> {{ $rider->license_number }}
-                                        </div>
-                                        <div class="flex items-center text-gray-600">
-                                            <i class="fas fa-motorcycle text-primary mr-2"></i>
-                                            <span class="font-medium">Plate:</span> {{ $rider->bike_plate }}
-                                        </div>
-                                    </div>
-                                </div>
+    <div class="scn-table-container">
+        <table class="scn-table">
+            <thead>
+                <tr>
+                    <th class="uppercase tracking-wider">Rider Profile</th>
+                    <th class="uppercase tracking-wider">Vehicle & Network</th>
+                    <th class="uppercase tracking-wider">Access Credentials</th>
+                    <th class="uppercase tracking-wider text-center">Status</th>
+                    <th class="uppercase tracking-wider text-center">Verification</th>
+                    <th class="uppercase tracking-wider text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($pendingRiders->take(5) as $rider)
+                <tr>
+                    <td>
+                        <div class="flex items-center gap-3">
+                            <div class="relative">
+                                <img src="{{ $rider->user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($rider->user->name) . '&background=F1F5F9&color=64748B' }}" 
+                                     class="h-10 w-10 rounded-full border border-slate-200 shadow-sm">
+                                <div class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-slate-300"></div>
                             </div>
-                            <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-3">
-                                <form action="{{ route('admin.rider.approve', $rider) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" class="btn-primary px-4 md:px-6 py-2 md:py-3 text-xs uppercase tracking-wider shadow-lg shadow-success/20 hover:shadow-success/30 group">
-                                        <i class="fas fa-check mr-2 group-hover:scale-110 transition"></i>
-                                        Approve
-                                    </button>
-                                </form>
-                                <form action="{{ route('admin.rider.reject', $rider) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" class="bg-error text-white px-4 md:px-6 py-2 md:py-3 rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg shadow-error/20 hover:bg-error/90 hover:shadow-error/30 transition group">
-                                        <i class="fas fa-times mr-2 group-hover:scale-110 transition"></i>
-                                        Reject
-                                    </button>
-                                </form>
+                            <div>
+                                <p class="text-sm font-semibold text-slate-900 leading-none">{{ $rider->user->name }}</p>
+                                <p class="text-xs text-slate-500 mt-1">{{ $rider->user->email }}</p>
                             </div>
                         </div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
+                    </td>
+                    <td>
+                        <div class="flex flex-col gap-1">
+                            <p class="text-sm font-medium text-slate-900 leading-none">{{ $rider->phone_number ?? $rider->user->phone ?? 'N/A' }}</p>
+                            <div class="flex items-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                                <i class="fas fa-motorcycle mr-1.5 text-[#2F6B3F]"></i>
+                                {{ $rider->bike_plate }}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <code class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-mono border border-slate-200">
+                            {{ $rider->license_number }}
+                        </code>
+                    </td>
+                    <td class="text-center">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black border uppercase bg-amber-50 text-amber-700 border-amber-200">
+                            Pending
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black border uppercase bg-amber-50 text-amber-700 border-amber-200">
+                            Pending
+                        </span>
+                    </td>
+                    <td>
+                        <div class="flex justify-end gap-2">
+                            <button onclick="showConfirmModal('approve', '{{ route('admin.rider.approve', $rider) }}', '{{ $rider->user->name }}')" 
+                                    class="h-8 px-4 rounded-md bg-[#2F6B3F] text-white text-[10px] font-black uppercase tracking-wider hover:bg-[#235031] transition-all shadow-sm">
+                                Approve
+                            </button>
+                            <a href="{{ route('admin.riders.show', $rider) }}" class="h-8 w-8 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center transition-colors shadow-sm">
+                                <i class="fas fa-eye text-[10px]"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="6" class="text-center py-12 text-slate-500 text-sm italic">No pending riders found</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="p-4 bg-slate-50/50 border-t border-slate-100">
+        <a href="{{ route('admin.riders') }}" class="btn-primary w-full !text-[10px] !font-black !uppercase !tracking-widest !bg-transparent !text-slate-600 !border !border-slate-200 !shadow-none hover:!bg-slate-50 text-center block py-2 rounded-lg">
+            Access Full Verification Portal
+        </a>
+    </div>
 </div>
 @endsection
 
 @section('scripts')
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('Dashboard loaded successfully');
-
-        // Add hover effects to cards
-        const cards = document.querySelectorAll('.card');
-        cards.forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-2px)';
-                this.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
-            });
-
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-                this.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)';
-            });
-        });
-
-        // Format money helper for JavaScript
-        function formatMoneyJS(amount) {
-            if (amount >= 1000000000) {
-                return (amount / 1000000000).toFixed(2) + 'B';
-            } else if (amount >= 1000000) {
-                return (amount / 1000000).toFixed(2) + 'M';
-            } else if (amount >= 1000) {
-                return (amount / 1000).toFixed(1) + 'K';
-            } else {
-                return amount.toLocaleString();
-            }
-        }
-
-        // Initialize Line Chart for Monthly Revenue
-        const revenueChartCanvas = document.getElementById('revenueLineChart');
-        if (revenueChartCanvas) {
-            // Sample data - replace with actual data from backend
-            const monthlyData = [
-                { month: 'Jan', amount: 450000 },
-                { month: 'Feb', amount: 520000 },
-                { month: 'Mar', amount: 380000 },
-                { month: 'Apr', amount: 610000 },
-                { month: 'May', amount: 490000 },
-                { month: 'Jun', amount: 550000 }
-            ];
-
-            // Format money function for chart
-            function formatChartMoney(amount) {
-                if (amount >= 1000000000) {
-                    return (amount / 1000000000).toFixed(2) + 'B';
-                } else if (amount >= 1000000) {
-                    return (amount / 1000000).toFixed(2) + 'M';
-                } else if (amount >= 1000) {
-                    return (amount / 1000).toFixed(1) + 'K';
-                } else {
-                    return amount.toFixed(0);
-                }
-            }
-
-            // Extract labels and data
-            const labels = monthlyData.map(item => item.month);
-            const amounts = monthlyData.map(item => item.amount);
-
-            // Get canvas context
-            const ctx = revenueChartCanvas.getContext('2d');
-
-            // Initialize Chart
-            const revenueChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Mapato',
-                        data: amounts,
-                        borderColor: '#2F6B3F',                    // Primary color
-                        backgroundColor: 'rgba(47, 107, 63, 0.08)',  // Solid light green background
-                        borderWidth: 3,
-                        fill: true,                                // Enable fill
-                        tension: 0.4,                              // Smooth curves
-                        pointRadius: 5,
-                        pointBackgroundColor: '#2F6B3F',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointHoverRadius: 7,
-                        pointHoverBackgroundColor: '#2F6B3F',
-                        pointHoverBorderColor: '#fff',
-                        pointHoverBorderWidth: 3
-                    }]
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+            datasets: [{
+                label: 'Revenue (TZS)',
+                data: [42000, 55000, 48000, 68000, 72000, 95000, 88000],
+                borderColor: '#2F6B3F',
+                borderWidth: 4,
+                fill: true,
+                backgroundColor: 'rgba(47, 107, 63, 0.1)',
+                tension: 0.4,
+                pointRadius: 6,
+                pointBackgroundColor: '#2F6B3F',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 3,
+                pointHoverRadius: 8,
+                pointHoverBackgroundColor: '#235031',
+                pointHoverBorderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: '#1f2937',
-                            titleColor: '#fff',
-                            bodyColor: '#fff',
-                            borderColor: '#2F6B3F',
-                            borderWidth: 1,
-                            padding: 12,
-                            displayColors: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return 'Mapato: TZS ' + formatChartMoney(context.parsed.y);
-                                }
-                            }
+                tooltip: {
+                    backgroundColor: '#1f2937',
+                    titleColor: '#f3f4f6',
+                    bodyColor: '#d1d5db',
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return 'TZS ' + context.parsed.y.toLocaleString();
                         }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)',
-                                drawBorder: false
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return 'TZS ' + formatChartMoney(value);
-                                },
-                                color: '#6b7280',
-                                font: {
-                                    size: 11
-                                }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false,
-                                drawBorder: false
-                            },
-                            ticks: {
-                                color: '#6b7280',
-                                font: {
-                                    size: 11
-                                }
-                            }
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
                     }
                 }
-            });
-
-            // Auto-filter functionality
-            const yearFilter = document.getElementById('yearFilter');
-            const periodFilter = document.getElementById('periodFilter');
-            const loadingIndicator = document.getElementById('loadingIndicator');
-
-            // Function to update chart
-            function updateChart() {
-                const year = yearFilter.value;
-                const period = periodFilter.value;
-
-                // Show loading indicator
-                if (loadingIndicator) {
-                    loadingIndicator.classList.remove('hidden');
-                }
-
-                // Simulate API call - replace with actual API call
-                setTimeout(() => {
-                    // Hide loading indicator
-                    if (loadingIndicator) {
-                        loadingIndicator.classList.add('hidden');
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return 'TZS ' + (value / 1000).toFixed(0) + 'K';
+                        }
                     }
-                }, 1000);
-            }
-
-            // Add change event listeners to both filters
-            if (yearFilter && periodFilter) {
-                yearFilter.addEventListener('change', updateChart);
-                periodFilter.addEventListener('change', updateChart);
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
             }
         }
     });
+});
 </script>
 @endsection

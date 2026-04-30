@@ -8,7 +8,7 @@
         /* Global CSS from app.blade.php */
         body { 
             background-color: #EAEFEF; 
-            font-family: 'Poppins', sans-serif; 
+            font-family: 'Elms Sans', sans-serif; 
             color: #1A1A1A; 
             background-image: 
                 radial-gradient(circle at 50% 50%, rgba(47, 107, 63, 0.03) 0%, transparent 20%),

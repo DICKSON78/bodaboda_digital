@@ -8,7 +8,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Elms+Sans:wght@100..900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -26,7 +26,7 @@
                         success: '#2A9D8F',
                     },
                     fontFamily: {
-                        sans: ['Poppins', 'sans-serif'],
+                        sans: ['Elms Sans', 'sans-serif'],
                     },
                     borderRadius: {
                         'xl': '12px',
@@ -39,7 +39,7 @@
     <style>
         body { 
             background-color: #EAEFEF; 
-            font-family: 'Poppins', sans-serif; 
+            font-family: 'Elms Sans', sans-serif; 
             color: #1A1A1A; 
             background-image: 
                 radial-gradient(circle at 50% 50%, rgba(47, 107, 63, 0.03) 0%, transparent 20%),
@@ -50,12 +50,95 @@
         .honeycomb {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='%232F6B3F' stroke-opacity='0.12' stroke-width='1.5'/%3E%3C/svg%3E");
         }
-        .btn-primary { background-color: #2F6B3F; color: white; border-radius: 12px; font-weight: bold; transition: all 0.3s; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-primary:hover { background-color: #255732; transform: translateY(-1px); }
-        .btn-outline { border: 2px solid #2F6B3F; color: #2F6B3F; border-radius: 12px; font-weight: bold; transition: all 0.3s; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-outline:hover { background-color: #2F6B3F; color: white; transform: translateY(-1px); }
-        .card { background-color: white; border-radius: 24px; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.02); }
-        
+        /* --- SHADCN-INSPIRED DESIGN SYSTEM --- */
+        .scn-card {
+            background-color: white;
+            border-radius: 0.75rem; /* rounded-xl (12px) */
+            border: 1px solid #e2e8f0; /* border-slate-200 */
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow-sm */
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            position: relative;
+        }
+        .scn-card:hover {
+            border-color: #cbd5e1; /* border-slate-300 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .scn-card-header {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .scn-card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            line-height: 1.25;
+            letter-spacing: -0.025em;
+            color: #0f172a; /* slate-900 */
+        }
+        .scn-card-description {
+            font-size: 0.875rem;
+            color: #64748b; /* slate-500 */
+        }
+        .scn-card-content {
+            padding: 1.5rem;
+            padding-top: 0;
+        }
+
+        /* --- PREMIUM DESIGN SYSTEM (DEPRECATED) --- */
+        @keyframes gradMove { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+        .card-accent {
+            height: 4px;
+            background: linear-gradient(90deg, #1e4d2b, #2F6B3F, #3E8E5A, #2F6B3F, #1e4d2b);
+            background-size: 300% 100%;
+            animation: gradMove 4s linear infinite;
+        }
+
+        .card { 
+            background-color: white; 
+            border-radius: 32px; 
+            box-shadow: 0 10px 40px rgba(47,107,63,0.06); 
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            overflow: hidden;
+            position: relative;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(47,107,63,0.12);
+        }
+
+        .badge-pill {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(47,107,63,0.08);
+            border: 1px solid rgba(47,107,63,0.2);
+            border-radius: 999px;
+            padding: 4px 12px;
+        }
+        .badge-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #2F6B3F;
+            animation: dotPulse 2s ease-in-out infinite;
+        }
+        @keyframes dotPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        .btn-premium {
+            background: linear-gradient(135deg, #2F6B3F 0%, #1e4d2b 100%);
+            color: white;
+            border-radius: 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 1rem 2rem;
+            box-shadow: 0 8px 20px rgba(47,107,63,0.2);
+            transition: all 0.3s ease;
+        }
+        .btn-premium:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(47,107,63,0.35);
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #EAEFEF; }

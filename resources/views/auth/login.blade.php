@@ -8,18 +8,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Login — BodaBoda Digital</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Elms+Sans:wght@100..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Elms Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#2F6B3F',
+                        'primary-dark': '#255732',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         :root {
             --primary: #2F6B3F;
             --primary-dark: #1e4d2b;
             --primary-light: #3E8E5A;
         }
-        * { margin:0; padding:0; box-sizing:border-box; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Elms Sans', sans-serif; }
 
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Elms Sans', sans-serif;
             min-height: 100vh;
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -154,7 +170,7 @@
             background: #f4f7f5;
             border: 2px solid #e2ebe4;
             border-radius: 14px;
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Elms Sans', sans-serif;
             font-size: 14px; font-weight: 500; color: #1a1a1a;
             outline: none;
             transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
@@ -173,7 +189,7 @@
             padding: 15px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white; border: none; border-radius: 14px;
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Elms Sans', sans-serif;
             font-size: 12px; font-weight: 800; letter-spacing: 0.14em;
             text-transform: uppercase; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 10px;

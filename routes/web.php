@@ -84,6 +84,20 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/rider/{rider}/suspend', [AdminController::class, 'suspendRider'])->name('rider.suspend');
         Route::post('/rider/{rider}/activate', [AdminController::class, 'activateRider'])->name('rider.activate');
         Route::delete('/rider/{rider}', [AdminController::class, 'deleteRider'])->name('rider.delete');
+
+        // Client (Passenger) Management
+        Route::get('/clients', [AdminController::class, 'clients'])->name('clients');
+        Route::get('/clients/{user}', [AdminController::class, 'showClient'])->name('clients.show');
+        Route::get('/clients/{user}/edit', [AdminController::class, 'editClient'])->name('clients.edit');
+        Route::put('/clients/{user}', [AdminController::class, 'updateClient'])->name('clients.update');
+        Route::post('/client/{user}/suspend', [AdminController::class, 'suspendClient'])->name('client.suspend');
+        Route::post('/client/{user}/activate', [AdminController::class, 'activateClient'])->name('client.activate');
+        Route::delete('/client/{user}', [AdminController::class, 'deleteClient'])->name('client.delete');
+
+        // Rides Management
+        Route::get('/rides', [AdminController::class, 'rides'])->name('rides');
+        Route::get('/rides/{ride}', [AdminController::class, 'showRide'])->name('rides.show');
+
         Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
         Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
         Route::get('/settings', [AdminController::class, 'settings'])->name('settings');

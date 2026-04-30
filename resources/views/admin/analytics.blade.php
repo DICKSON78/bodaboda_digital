@@ -1,176 +1,303 @@
-@extends('layouts.admin-kkk')
+@extends('layouts.admin')
 
-@section('title', 'Takwimu - BodaBoda Admin Panel')
-@section('page-title', 'Takwimu')
-@section('page-subtitle', 'Ona takwimu za biashara na utendaji')
+@section('title', 'Analytics - BodaBoda Admin Panel')
+@section('page-title', 'Analytics & Trends')
+@section('page-subtitle', 'Deep dive into platform performance and growth')
 
 @section('content')
-@php
-// Helper function to format money with M, B, K
-function formatMoney($amount) {
-    if ($amount >= 1000000000) { // Billions
-        return number_format($amount / 1000000000, 2) . 'B';
-    } elseif ($amount >= 1000000) { // Millions
-        return number_format($amount / 1000000, 2) . 'M';
-    } elseif ($amount >= 1000) { // Thousands
-        return number_format($amount / 1000, 1) . 'K';
-    } else {
-        return number_format($amount, 0);
-    }
-}
-@endphp
-<!-- Analytics Overview -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
-    <div class="card bg-white rounded-xl border border-gray-200 shadow-sm p-4 md:p-6 hover:shadow-lg transition-shadow duration-200">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-700">Jumla ya Safiri</p>
-                <p class="mt-1 text-2xl md:text-3xl font-semibold text-gray-900">{{ formatMoney($monthlyRides->sum('count') ?? 0) }}</p>
-                <p class="mt-1 text-xs md:text-sm text-gray-500">Miezi 12 iliyopita</p>
+<!-- Stats Row - Consistent with Dashboard Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Monthly Income Card -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-[#2F6B3F]/5 to-white rounded-2xl shadow-lg border border-[#2F6B3F]/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-[#2F6B3F]/10 rounded-full -mr-10 -mt-10"></div>
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-[#2F6B3F] rounded-xl shadow-lg">
+                    <i class="fas fa-wallet text-white text-xl"></i>
+                </div>
+                <span class="text-3xl font-black text-[#2F6B3F]">TZS {{ number_format($monthlyIncome, 0) }}</span>
             </div>
-            <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary-100 flex items-center justify-center">
-                <i class="fas fa-motorcycle text-primary text-lg md:text-xl"></i>
+            <h3 class="text-slate-700 font-bold text-sm mb-1">MONTHLY INCOME</h3>
+            <div class="flex items-center justify-between">
+                <p class="text-xs text-slate-500">Platform revenue</p>
+                <span class="text-xs font-bold text-emerald-600">↑ 12.5% vs last month</span>
             </div>
         </div>
     </div>
 
-    <div class="card bg-white rounded-xl border border-gray-200 shadow-sm p-4 md:p-6 hover:shadow-lg transition-shadow duration-200">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-700">Mapato ya Mwezi</p>
-                <p class="mt-1 text-2xl md:text-3xl font-semibold text-gray-900">{{ formatMoney($topPerformers->sum('total_earnings') ?? 0) }} TSh</p>
-                <p class="mt-1 text-xs md:text-sm text-gray-500">{{ \Carbon\Carbon::now()->translatedFormat('F Y') }}</p>
+    <!-- Service Volume Card -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-[#2F6B3F]/5 to-white rounded-2xl shadow-lg border border-[#2F6B3F]/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-[#2F6B3F]/10 rounded-full -mr-10 -mt-10"></div>
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-[#2F6B3F] rounded-xl shadow-lg">
+                    <i class="fas fa-route text-white text-xl"></i>
+                </div>
+                <span class="text-3xl font-black text-[#2F6B3F]">{{ number_format($monthlyRides->sum('count')) }}</span>
             </div>
-            <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-success-100 flex items-center justify-center">
-                <i class="fas fa-hand-holding-usd text-success text-lg md:text-xl"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="card bg-white rounded-xl border border-gray-200 shadow-sm p-4 md:p-6 hover:shadow-lg transition-shadow duration-200">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-700">Wapandaji Wanaofanya Kazi</p>
-                <p class="mt-1 text-2xl md:text-3xl font-semibold text-gray-900">{{ $topPerformers->count() }}</p>
-                <p class="mt-1 text-xs md:text-sm text-gray-500">Walioidhinishwa</p>
-            </div>
-            <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-accent-100 flex items-center justify-center">
-                <i class="fas fa-users text-accent text-lg md:text-xl"></i>
+            <h3 class="text-slate-700 font-bold text-sm mb-1">SERVICE VOLUME</h3>
+            <div class="flex items-center justify-between">
+                <p class="text-xs text-slate-500">Total completed trips</p>
+                <span class="text-xs font-bold text-[#2F6B3F]">✓ Verified</span>
             </div>
         </div>
     </div>
 
-    <div class="card bg-white rounded-xl border border-gray-200 shadow-sm p-4 md:p-6 hover:shadow-lg transition-shadow duration-200">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm font-medium text-gray-700">Wastani wa Kati</p>
-                <p class="mt-1 text-2xl md:text-3xl font-semibold text-gray-900">{{ number_format($topPerformers->avg('average_rating') ?? 0, 1) }}</p>
-                <p class="mt-1 text-xs md:text-sm text-gray-500">Kati ya nyota 5</p>
+    <!-- Quality Index Card -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-[#2F6B3F]/5 to-white rounded-2xl shadow-lg border border-[#2F6B3F]/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-[#2F6B3F]/10 rounded-full -mr-10 -mt-10"></div>
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-[#2F6B3F] rounded-xl shadow-lg">
+                    <i class="fas fa-star text-white text-xl"></i>
+                </div>
+                <span class="text-3xl font-black text-[#2F6B3F]">{{ number_format($overallAvgRating, 1) }} <span class="text-sm font-normal text-slate-400">/ 5.0</span></span>
             </div>
-            <div class="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-warning-100 flex items-center justify-center">
-                <i class="fas fa-star text-warning text-lg md:text-xl"></i>
+            <h3 class="text-slate-700 font-bold text-sm mb-1">QUALITY INDEX</h3>
+            <div class="flex items-center justify-between">
+                <p class="text-xs text-slate-500">Fleet average rating</p>
+                <div class="flex text-[10px] text-amber-400">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Fleet Card -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-[#2F6B3F]/5 to-white rounded-2xl shadow-lg border border-[#2F6B3F]/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-[#2F6B3F]/10 rounded-full -mr-10 -mt-10"></div>
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 bg-[#2F6B3F] rounded-xl shadow-lg">
+                    <i class="fas fa-motorcycle text-white text-xl"></i>
+                </div>
+                <span class="text-3xl font-black text-[#2F6B3F]">{{ number_format($topPerformers->count()) }}</span>
+            </div>
+            <h3 class="text-slate-700 font-bold text-sm mb-1">ACTIVE FLEET</h3>
+            <div class="flex items-center justify-between">
+                <p class="text-xs text-slate-500">Top performing riders</p>
+                <span class="text-xs font-bold text-[#2F6B3F]">🏆 Elite</span>
             </div>
         </div>
     </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-    <!-- Monthly Ride Statistics -->
-    <div class="card bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div class="p-4 md:p-6 border-b border-gray-100">
-            <h3 class="text-lg font-medium text-gray-700 flex items-center">
-                <i class="fas fa-chart-line text-primary mr-2"></i>
-                Takwimu za Safiri Kwa Mwezi
-            </h3>
+<!-- Analytics Intelligence Filter - Consistent Design -->
+<div class="bg-white rounded-2xl shadow-lg border border-slate-100 mb-8 overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-[#2F6B3F] flex items-center justify-center text-white shadow-lg">
+                    <i class="fas fa-brain text-sm"></i>
+                </div>
+                <div>
+                    <h3 class="text-slate-900 font-bold text-base">Intelligence Matrix</h3>
+                    <p class="text-slate-500 text-sm">Configure analysis parameters</p>
+                </div>
+            </div>
+            <div class="px-3 py-1 bg-[#2F6B3F]/10 rounded-lg">
+                <i class="fas fa-chart-line text-[#2F6B3F] text-xs"></i>
+                <span class="text-[#2F6B3F] text-xs font-bold ml-1">Advanced Analytics</span>
+            </div>
         </div>
-        <div class="p-4 md:p-6">
-            <div class="space-y-3">
-                @foreach($monthlyRides as $monthly)
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <span class="text-sm font-medium text-gray-700 w-20">{{ date('M Y', strtotime($monthly->month)) }}</span>
-                            <div class="flex-1 bg-gray-200 rounded-full h-6 relative overflow-hidden">
-                                <div class="bg-gradient-to-r from-primary to-secondary-green h-full rounded-full transition-all duration-500" 
-                                     style="width: {{ ($monthly->count / $monthlyRides->max('count')) * 100 }}%"></div>
-                            </div>
-                        </div>
-                        <span class="text-sm font-bold text-primary">{{ $monthly->count }}</span>
+    </div>
+    <div class="p-6">
+        <form class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+            <div class="space-y-2">
+                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                    <i class="fas fa-calendar-alt text-[10px] text-[#2F6B3F]"></i>
+                    Temporal Range
+                </label>
+                <select class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all cursor-pointer">
+                    <option>Fiscal Year 2026</option>
+                    <option>Quarterly (Q1-Q4)</option>
+                    <option>Monthly Snapshot</option>
+                </select>
+            </div>
+            <div class="space-y-2">
+                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                    <i class="fas fa-microchip text-[10px] text-[#2F6B3F]"></i>
+                    Data Layer
+                </label>
+                <select class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all cursor-pointer">
+                    <option>Revenue Flow</option>
+                    <option>Trip Velocity</option>
+                    <option>Rider Quality</option>
+                </select>
+            </div>
+            <div class="space-y-2">
+                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                    <i class="fas fa-file-export text-[10px] text-[#2F6B3F]"></i>
+                    Output Format
+                </label>
+                <select class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all cursor-pointer">
+                    <option>Standard View</option>
+                    <option>Detailed PDF</option>
+                    <option>Raw CSV Data</option>
+                </select>
+            </div>
+            <button type="button" class="h-12 px-4 rounded-xl bg-[#2F6B3F] text-xs font-bold text-white hover:bg-[#235031] transition-all flex items-center justify-center gap-2 shadow-md">
+                <i class="fas fa-sync text-[11px]"></i> REFRESH ANALYSIS
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Charts and Top Performers Row -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Ride Volume Chart -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-slate-900 font-bold text-base">Mobility Growth Velocity</h3>
+                        <p class="text-slate-500 text-sm">Temporal mapping of platform trip distribution</p>
                     </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-
-    <!-- Top Performing Riders -->
-    <div class="card bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div class="p-4 md:p-6 border-b border-gray-100">
-            <h3 class="text-lg font-medium text-gray-700 flex items-center">
-                <i class="fas fa-trophy text-primary mr-2"></i>
-                Wapandaaji Bora zaidi
-            </h3>
-        </div>
-        <div class="p-4 md:p-6">
-            <div class="space-y-4">
-                @foreach($topPerformers as $index => $performer)
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                        <div class="flex items-center space-x-3">
-                            <div class="h-8 w-8 bg-primary-100 rounded-lg flex items-center justify-center">
-                                <span class="text-sm font-bold text-primary">{{ $index + 1 }}</span>
-                            </div>
-                            <img src="{{ $performer['rider']->user->avatar }}" class="h-10 w-10 rounded-lg">
-                            <div>
-                                <p class="font-semibold text-gray-900">{{ $performer['rider']->user->name }}</p>
-                                <p class="text-xs text-gray-500">{{ $performer['rider']->phone_number }}</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-bold text-primary">{{ $performer['total_rides'] }} safiri</p>
-                            <p class="text-sm font-bold text-success">TZS {{ formatMoney($performer['total_earnings']) }}</p>
-                            <div class="flex items-center justify-end">
-                                <span class="text-sm font-bold text-warning">{{ number_format($performer['average_rating'], 1) }}</span>
-                                <i class="fas fa-star text-warning ml-1"></i>
-                            </div>
-                        </div>
+                    <div class="flex gap-2">
+                        <button class="h-9 px-4 rounded-lg bg-[#2F6B3F] text-[10px] font-bold text-white shadow-sm">MONTHLY</button>
+                        <button class="h-9 px-4 rounded-lg border border-slate-200 bg-white text-[10px] font-bold text-slate-600 hover:bg-slate-50 hover:border-[#2F6B3F]/30 transition-colors">WEEKLY</button>
                     </div>
-                @endforeach
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="h-[350px] w-full">
+                    <canvas id="ridesChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Performance Metrics -->
-<div class="card bg-white rounded-xl border border-gray-200 shadow-sm mt-6 md:mt-8">
-    <div class="p-4 md:p-6">
-        <h3 class="text-lg font-medium text-gray-700 mb-4 flex items-center">
-            <i class="fas fa-chart-bar text-primary mr-2"></i>
-            Viwango Vya Biashara
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            <div class="text-center">
-                <div class="h-20 w-20 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-motorcycle text-primary text-2xl"></i>
+    <!-- Top Performing Riders - Consistent Card Design -->
+    <div class="lg:col-span-1">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-amber-50 to-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-slate-900 font-bold text-base">Elite Fleet Index</h3>
+                        <p class="text-slate-500 text-sm">Top performing service operators</p>
+                    </div>
+                    <div class="h-10 w-10 rounded-xl bg-amber-500 flex items-center justify-center text-white shadow-lg">
+                        <i class="fas fa-trophy text-sm"></i>
+                    </div>
                 </div>
-                <h4 class="text-2xl font-bold text-primary">{{ formatMoney($monthlyRides->sum('count') ?? 0) }}</h4>
-                <p class="text-sm font-medium text-gray-700">Jumla ya Safiri</p>
-                <p class="text-xs text-gray-500 mt-1">Miezi 12 iliyopita</p>
             </div>
-            <div class="text-center">
-                <div class="h-20 w-20 bg-success-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-hand-holding-usd text-success text-2xl"></i>
-                </div>
-                <h4 class="text-2xl font-bold text-success">{{ formatMoney($topPerformers->sum('total_earnings') ?? 0) }} TSh</h4>
-                <p class="text-sm font-medium text-gray-700">Mapato Jumla</p>
-                <p class="text-xs text-gray-500 mt-1">Mapato yote wakati wote</p>
+            <div class="scn-table-container">
+                <table class="scn-table">
+                    <thead>
+                        <tr>
+                            <th class="uppercase tracking-wider">Operator</th>
+                            <th class="uppercase tracking-wider text-center">Trips</th>
+                            <th class="uppercase tracking-wider text-right">Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($topPerformers as $performer)
+                        <tr class="hover:bg-slate-50/50 transition-colors duration-150">
+                            <td>
+                                <div class="flex items-center gap-3">
+                                    <div class="relative">
+                                        <img src="{{ $performer->user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($performer->user->name) . '&background=F1F5F9&color=64748B' }}" 
+                                             class="h-9 w-9 rounded-full border-2 border-slate-200 shadow-sm">
+                                        <div class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500"></div>
+                                    </div>
+                                    <span class="text-sm font-bold text-slate-900 truncate max-w-[100px]">{{ $performer->user->name }}</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="text-sm font-black text-[#2F6B3F]">{{ number_format($performer->rides_count) }}</span>
+                            </td>
+                            <td class="text-right">
+                                <div class="inline-flex items-center gap-1 text-amber-500 font-bold">
+                                    <i class="fas fa-star text-[10px]"></i>
+                                    <span class="text-sm">{{ number_format($performer->avg_rating, 1) }}</span>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
-            <div class="text-center">
-                <div class="h-20 w-20 bg-accent-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-users text-accent text-2xl"></i>
-                </div>
-                <h4 class="text-2xl font-bold text-accent">{{ $topPerformers->count() }}</h4>
-                <p class="text-sm font-medium text-gray-700">Wapandaji Wanaofanya Kazi</p>
-                <p class="text-xs text-gray-500 mt-1">Walioidhinishwa</p>
+            <div class="p-4 border-t border-slate-100 bg-slate-50/30">
+                <button class="w-full h-10 rounded-xl border border-slate-200 bg-white text-[10px] font-bold text-slate-600 hover:bg-slate-50 hover:border-[#2F6B3F]/30 transition-all uppercase tracking-wider shadow-sm">
+                    View Full Leaderboard →
+                </button>
             </div>
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('ridesChart').getContext('2d');
+    
+    const monthlyData = @json($monthlyRides);
+    const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const data = new Array(12).fill(0);
+    
+    monthlyData.forEach(item => {
+        data[item.month - 1] = item.count;
+    });
+
+    // Create gradient for bars
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, '#2F6B3F');
+    gradient.addColorStop(1, '#235031');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Trips',
+                data: data,
+                backgroundColor: '#2F6B3F',
+                borderRadius: 8,
+                barPercentage: 0.65,
+                categoryPercentage: 0.8,
+                hoverBackgroundColor: '#235031'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1f2937',
+                    titleColor: '#f3f4f6',
+                    bodyColor: '#d1d5db',
+                    padding: 10,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y.toLocaleString() + ' trips';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
+                    ticks: { 
+                        font: { size: 10, weight: '500' },
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 10, weight: '500' } }
+                }
+            }
+        }
+    });
+});
+</script>
 @endsection
