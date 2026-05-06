@@ -931,6 +931,181 @@ public function test_passenger_can_book_ride()
 - Backup database regularly
 - Monitor application logs
 
+## Monitoring with Grafana
+
+BodaBoda Digital includes comprehensive monitoring setup with Grafana and Prometheus for real-time insights into platform performance and business metrics.
+
+### Monitoring Stack
+
+- **Grafana**: Visualization dashboard (Port 3001)
+- **Prometheus**: Data collection and storage (Port 9090)
+- **Node Exporter**: System metrics collection (Port 9100)
+- **Custom Metrics**: BodaBoda-specific business metrics
+
+### Quick Start with Monitoring
+
+```bash
+# Start all services including monitoring
+docker-compose up -d
+
+# Access monitoring interfaces
+# Grafana Dashboard: http://localhost:3001
+# Prometheus: http://localhost:9090
+# Node Exporter: http://localhost:9100
+
+# Default Grafana credentials
+# Username: admin
+# Password: admin123
+```
+
+### Available Metrics
+
+#### Business Metrics
+- **Total Rides**: Complete count of all rides
+- **Active Users**: Number of registered users
+- **Active Rides**: Currently ongoing rides
+- **Completed Rides**: Successfully finished rides
+- **Total Revenue**: Revenue in Tanzanian Shillings (TZS)
+- **Average Ride Duration**: Average time per ride
+- **Rider Applications**: Total rider registration requests
+
+#### System Metrics
+- **Memory Usage**: Application memory consumption
+- **CPU Usage**: System processor utilization
+- **Response Time**: Average API response time
+- **Error Rate**: Percentage of failed requests
+- **Database Connections**: Active database connections
+- **Cache Hit Rate**: Cache performance metrics
+
+#### Infrastructure Metrics
+- **System Load**: Server load averages
+- **Disk Usage**: Storage utilization
+- **Network Traffic**: Network I/O statistics
+- **Container Health**: Docker container status
+
+### Grafana Dashboards
+
+#### BodaBoda Platform Overview
+
+![BodaBoda Monitoring Dashboard](assets/images/monitoring-dashboard.png)
+
+The comprehensive dashboard includes:
+- **Real-time Statistics**: Live platform metrics
+- **Performance Trends**: Historical performance data
+- **Business KPIs**: Key business indicators
+- **System Health**: Infrastructure monitoring
+- **Alert Thresholds**: Configurable alerts
+
+### Accessing Monitoring
+
+1. **Grafana Dashboard**
+   ```
+   URL: http://localhost:3001
+   Username: admin
+   Password: admin123
+   ```
+
+2. **Prometheus Interface**
+   ```
+   URL: http://localhost:9090
+   Query metrics directly
+   View target status
+   ```
+
+3. **Metrics Endpoint**
+   ```
+   URL: http://localhost:8000/metrics
+   Prometheus format data
+   Real-time metrics
+   ```
+
+### Custom Metrics Configuration
+
+The MetricsController (`app/Http/Controllers/MetricsController.php`) provides:
+
+- **Business Logic Metrics**: Rides, users, revenue
+- **Performance Metrics**: Response times, error rates
+- **System Metrics**: Memory, CPU, database
+- **Custom KPIs**: Platform-specific indicators
+
+### Alerting Setup
+
+Configure alerts in Grafana for:
+
+- **High Error Rates**: > 5% error rate
+- **Slow Response Times**: > 2 second average
+- **Low Active Rides**: < 1 active ride for 30 minutes
+- **High Memory Usage**: > 80% memory utilization
+- **Database Issues**: Connection failures
+
+### Monitoring Best Practices
+
+1. **Regular Review**: Check dashboards daily
+2. **Alert Configuration**: Set up meaningful alerts
+3. **Performance Baselines**: Establish normal ranges
+4. **Historical Analysis**: Review trends weekly
+5. **Capacity Planning**: Monitor growth patterns
+
+### Troubleshooting Monitoring
+
+**Grafana Not Accessible**
+```bash
+# Check Grafana container status
+docker-compose ps grafana
+
+# Restart Grafana service
+docker-compose restart grafana
+
+# Check Grafana logs
+docker-compose logs grafana
+```
+
+**Prometheus Not Collecting Data**
+```bash
+# Check Prometheus targets
+curl http://localhost:9090/api/v1/targets
+
+# Check metrics endpoint
+curl http://localhost:8000/metrics
+
+# Restart Prometheus
+docker-compose restart prometheus
+```
+
+**Missing Metrics**
+```bash
+# Verify metrics endpoint works
+curl -s http://localhost:8000/metrics | head -20
+
+# Check Laravel logs
+docker-compose logs app | grep metrics
+```
+
+### Monitoring Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   BodaBoda App  │───▶│   Prometheus    │───▶│     Grafana     │
+│   (Metrics)     │    │   (Collection)  │    │  (Visualization)│
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Node Exporter  │    │   MySQL Exporter│    │   Nginx Exporter│
+│  (System)        │    │   (Database)    │    │   (Web Server)  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### Production Monitoring
+
+For production deployment:
+
+1. **Persistent Storage**: Configure data retention
+2. **Security**: Secure Grafana access
+3. **Backup**: Regular dashboard backups
+4. **Scaling**: Multiple monitoring instances
+5. **Integration**: External alerting systems
+
 ## Contributing
 
 We welcome contributions! Please follow these steps:

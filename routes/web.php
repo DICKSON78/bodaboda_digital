@@ -7,6 +7,7 @@ use App\Http\Controllers\RiderController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\RideController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\MetricsController;
 
 Route::get('/', function () { return view('welcome'); })->name('home');
 Route::get('/about', function () { return view('pages.about'); })->name('about');
@@ -31,6 +32,9 @@ Route::get('/reset-password/{token}', [AuthController::class, 'showResetForm'])-
 Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 Route::get('/riders/online', [App\Http\Controllers\LocationController::class, 'getAllOnlineRiders'])->name('riders.online');
 Route::get('/api/locations', [App\Http\Controllers\LocationController::class, 'getLocations']);
+
+// Metrics endpoint for Prometheus
+Route::get('/metrics', [MetricsController::class, 'metrics']);
 
 // Ride Request API Routes
 Route::post('/api/rides/request', [App\Http\Controllers\RideRequestController::class, 'requestRide']);

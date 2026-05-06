@@ -471,6 +471,13 @@ show_access_info() {
         echo "   Login: admin@bodaboda.co.tz / password"
         echo ""
         
+        echo -e "${CYAN}Monitoring Services:${NC}"
+        echo "   Grafana Dashboard: http://localhost:3001"
+        echo "   Prometheus: http://localhost:9090"
+        echo "   Node Exporter: http://localhost:9100"
+        echo "   Grafana Credentials: admin / admin123"
+        echo ""
+        
         echo -e "${CYAN}Database Access:${NC}"
         echo "   MySQL: localhost:3306"
         echo "   User: bodaboda_user"
