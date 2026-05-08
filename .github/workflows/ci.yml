@@ -49,11 +49,9 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      - name: Generate application key
-        run: php artisan key:generate
-
-      - name: Set up database
+      - name: Setup Database
         run: |
+          cp .env.example .env
           php artisan config:cache
           php artisan migrate --force
           php artisan db:seed --force
