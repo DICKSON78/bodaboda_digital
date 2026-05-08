@@ -31,6 +31,10 @@ class DatabaseSeeder extends Seeder
             [
                 'passenger_id' => 1,
                 'rider_id' => 1,
+                'pickup_lat' => -6.8167,
+                'pickup_lng' => 39.2800,
+                'dest_lat' => -6.8200,
+                'dest_lng' => 39.2830,
                 'fare' => 5000,
                 'status' => 'completed',
                 'created_at' => now(),
@@ -39,6 +43,10 @@ class DatabaseSeeder extends Seeder
             [
                 'passenger_id' => 2,
                 'rider_id' => 2,
+                'pickup_lat' => -6.8167,
+                'pickup_lng' => 39.2800,
+                'dest_lat' => -6.8250,
+                'dest_lng' => 39.2900,
                 'fare' => 3000,
                 'status' => 'ongoing',
                 'created_at' => now(),
@@ -47,6 +55,10 @@ class DatabaseSeeder extends Seeder
             [
                 'passenger_id' => 3,
                 'rider_id' => 1,
+                'pickup_lat' => -6.8167,
+                'pickup_lng' => 39.2800,
+                'dest_lat' => -6.8300,
+                'dest_lng' => 39.2950,
                 'fare' => 7000,
                 'status' => 'completed',
                 'created_at' => now(),
