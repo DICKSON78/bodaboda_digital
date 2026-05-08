@@ -26,6 +26,28 @@ class DatabaseSeeder extends Seeder
         // Create test users for CI
         User::factory()->count(5)->create();
 
+        // Create test riders for CI (needed for rides foreign key)
+        \DB::table('riders')->insert([
+            [
+                'user_id' => 1,
+                'license_number' => 'RIDER001',
+                'bike_plate' => 'ABC123',
+                'bike_image' => 'bike1.jpg',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'user_id' => 2,
+                'license_number' => 'RIDER002',
+                'bike_plate' => 'XYZ789',
+                'bike_image' => 'bike2.jpg',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
         // Create test rides data
         \DB::table('rides')->insert([
             [
