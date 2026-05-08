@@ -29,18 +29,24 @@ class DatabaseSeeder extends Seeder
         // Create test rides data
         \DB::table('rides')->insert([
             [
+                'passenger_id' => 1,
+                'rider_id' => 1,
                 'fare' => 5000,
                 'status' => 'completed',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
+                'passenger_id' => 2,
+                'rider_id' => 2,
                 'fare' => 3000,
-                'status' => 'active',
+                'status' => 'ongoing',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
+                'passenger_id' => 3,
+                'rider_id' => 1,
                 'fare' => 7000,
                 'status' => 'completed',
                 'created_at' => now(),
