@@ -1106,6 +1106,184 @@ For production deployment:
 4. **Scaling**: Multiple monitoring instances
 5. **Integration**: External alerting systems
 
+## CI/CD Pipeline
+
+BodaBoda Digital includes a comprehensive CI/CD pipeline that automatically tests and builds the application on every code change.
+
+### Pipeline Overview
+
+The CI pipeline (`.github/workflows/ci.yml`) automatically triggers on:
+- **Push to main branch**: Full testing and deployment
+- **Pull requests**: Testing and validation
+
+### Pipeline Stages
+
+#### **1. Environment Setup**
+- **PHP 8.3**: Latest stable version
+- **MySQL 8.0**: Test database with health checks
+- **Dependencies**: Automatic Composer installation
+- **Environment**: Test configuration setup
+
+#### **2. Testing Phase**
+- **Unit Tests**: Business logic validation
+- **Feature Tests**: API endpoint testing
+- **Metrics Tests**: Prometheus format validation
+- **Health Checks**: Application health verification
+- **Coverage**: Minimum 80% code coverage required
+
+#### **3. Quality Assurance**
+- **Security Scan**: Dependency vulnerability check
+- **Code Quality**: Laravel best practices validation
+- **API Testing**: Endpoint functionality verification
+- **Metrics Validation**: Prometheus format compliance
+
+#### **4. Build & Deploy**
+- **Docker Build**: Multi-stage image creation
+- **Registry Push**: GitHub Container Registry
+- **Staging Deploy**: Automatic deployment to staging
+- **Artifact Upload**: Test results and logs
+
+### Running Tests Locally
+
+```bash
+# Install dependencies
+composer install
+
+# Run all tests
+php artisan test
+
+# Run specific test
+php artisan test --filter=BodaBodaMetricsTest
+
+# Run with coverage
+php artisan test --coverage
+
+# Run API tests
+php artisan serve &
+curl -f http://localhost:8000/api/health
+curl -f http://localhost:8000/metrics
+```
+
+### Test Coverage Requirements
+
+The pipeline requires **minimum 80% test coverage** to pass:
+
+#### **Unit Tests** (`tests/Unit/`)
+- **BodaBodaBusinessLogicTest**: Business metrics calculation
+- **Metrics validation**: Data accuracy and format
+- **System metrics**: CPU, memory, response times
+
+#### **Feature Tests** (`tests/Feature/`)
+- **BodaBodaMetricsTest**: API endpoint testing
+- **Prometheus format**: Metrics endpoint validation
+- **Health checks**: Application status verification
+
+### Pipeline Failure Scenarios
+
+#### **Test Failure Example**
+To intentionally break a test and see pipeline failure:
+
+```php
+// In tests/Feature/BodaBodaMetricsTest.php
+public function test_metrics_endpoint_returns_prometheus_format()
+{
+    $response = $this->get('/metrics');
+    
+    // This will cause failure
+    $response->assertStatus(500); // Wrong status code
+}
+```
+
+#### **Expected Failure Output**
+```
+❌ Failed asserting that response has status code 500.
+✅ Expected: 500
+❌ Actual: 200
+🔍 Test: BodaBodaMetricsTest::test_metrics_endpoint_returns_prometheus_format
+```
+
+### API Endpoints Tested
+
+#### **Health Check** (`GET /api/health`)
+```json
+{
+  "status": "healthy",
+  "service": "BodaBoda Digital",
+  "version": "1.0.0",
+  "timestamp": "2026-05-08T12:00:00Z",
+  "database": "connected",
+  "environment": "testing"
+}
+```
+
+#### **Metrics** (`GET /metrics`)
+```
+# HELP bodaboda_rides_total Total number of rides
+# TYPE bodaboda_rides_total counter
+bodaboda_rides_total 229
+
+# HELP bodaboda_users_total Total number of users
+# TYPE bodaboda_users_total counter
+bodaboda_users_total 753
+```
+
+### Security Requirements
+
+The pipeline includes automated security scanning:
+- **Dependency Check**: `enlightn/security-checker`
+- **Vulnerability Scan**: Package security audit
+- **Fail on Issues**: Pipeline fails on security vulnerabilities
+
+### Docker Image Building
+
+The pipeline builds and pushes Docker images with:
+- **Multi-stage build**: Optimized image size
+- **Layer caching**: GitHub Actions cache
+- **Tagging**: Branch, SHA, and latest tags
+- **Registry**: GitHub Container Registry (`ghcr.io`)
+
+### Environment Variables
+
+Required for pipeline:
+- `GITHUB_TOKEN`: Automatic authentication
+- `REGISTRY`: Container registry URL
+- `IMAGE_NAME`: Repository name
+
+### Troubleshooting Pipeline Issues
+
+#### **Common Failures**
+1. **Test Coverage**: Below 80% threshold
+2. **Database**: Connection issues in tests
+3. **Dependencies**: Composer installation failures
+4. **Security**: Vulnerability detection
+
+#### **Debugging Steps**
+```bash
+# Check test coverage locally
+php artisan test --coverage --min=80
+
+# Verify database connection
+php artisan tinker
+>>> DB::connection()->getPdo()
+
+# Check security
+composer require --dev enlightn/security-checker
+vendor/bin/security-checker security:check
+```
+
+### Pipeline Success Indicators
+
+✅ **Green Pipeline**: All tests pass, security clean, image built  
+❌ **Red Pipeline**: Test failure, security issue, or build error  
+🟡 **Warning**: Non-critical issues, pipeline continues  
+
+### Monitoring Pipeline Performance
+
+- **Duration**: Typical 3-5 minutes
+- **Resources**: Ubuntu latest runner
+- **Parallel**: Tests run concurrently
+- **Caching**: Dependencies and Docker layers cached
+
 ## Contributing
 
 We welcome contributions! Please follow these steps:

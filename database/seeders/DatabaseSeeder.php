@@ -15,13 +15,40 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        // Create admin user
         User::factory()->create([
             'name' => 'Admin User',
             'email' => 'admin@bodaboda.com',
             'password' => bcrypt('admin123'),
             'role' => 'admin',
+        ]);
+
+        // Create test users for CI
+        User::factory()->count(5)->create();
+
+        // Create test rides data
+        \DB::table('rides')->insert([
+            [
+                'user_id' => 1,
+                'fare' => 5000,
+                'status' => 'completed',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'user_id' => 2,
+                'fare' => 3000,
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'user_id' => 3,
+                'fare' => 7000,
+                'status' => 'completed',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
     }
 }

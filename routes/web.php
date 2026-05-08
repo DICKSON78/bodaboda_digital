@@ -36,6 +36,9 @@ Route::get('/api/locations', [App\Http\Controllers\LocationController::class, 'g
 // Metrics endpoint for Prometheus
 Route::get('/metrics', [MetricsController::class, 'metrics']);
 
+// Health check endpoint for CI/CD
+Route::get('/api/health', [App\Http\Controllers\HealthController::class, 'health']);
+
 // Ride Request API Routes
 Route::post('/api/rides/request', [App\Http\Controllers\RideRequestController::class, 'requestRide']);
 Route::post('/api/rides/{ride}/accept', [App\Http\Controllers\RideRequestController::class, 'acceptRide']);
