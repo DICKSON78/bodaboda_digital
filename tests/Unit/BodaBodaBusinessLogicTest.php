@@ -17,13 +17,13 @@ class BodaBodaBusinessLogicTest extends TestCase
     {
         // Create test data
         \DB::table('users')->insert([
-            ['name' => 'User 1', 'email' => 'user1@test.com', 'password' => bcrypt('password')],
-            ['name' => 'User 2', 'email' => 'user2@test.com', 'password' => bcrypt('password')],
+            ['name' => 'User 1', 'email' => 'user1@test.com', 'password' => bcrypt('password'), 'role' => 'passenger'],
+            ['name' => 'User 2', 'email' => 'user2@test.com', 'password' => bcrypt('password'), 'role' => 'passenger'],
         ]);
 
         \DB::table('rides')->insert([
             ['passenger_id' => 1, 'pickup_lat' => -1.2921, 'pickup_lng' => 36.8219, 'dest_lat' => -1.3021, 'dest_lng' => 36.8319, 'fare' => 5000, 'status' => 'completed'],
-            ['passenger_id' => 1, 'pickup_lat' => -1.2921, 'pickup_lng' => 36.8219, 'dest_lat' => -1.3021, 'dest_lng' => 36.8319, 'fare' => 3000, 'status' => 'active'],
+            ['passenger_id' => 1, 'pickup_lat' => -1.2921, 'pickup_lng' => 36.8219, 'dest_lat' => -1.3021, 'dest_lng' => 36.8319, 'fare' => 3000, 'status' => 'ongoing'],
         ]);
 
         $controller = new MetricsController();

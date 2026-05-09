@@ -16,14 +16,17 @@ class BodaBodaMetricsTest extends TestCase
     public function test_metrics_endpoint_returns_prometheus_format()
     {
         // Create test data
+        $userId = DB::table('users')->insertGetId([
+            'name' => 'Test User', 'email' => 'test@example.com', 'password' => bcrypt('password'), 'role' => 'passenger'
+        ]);
+
         DB::table('users')->insert([
-            ['name' => 'Test User', 'email' => 'test@example.com', 'password' => bcrypt('password')],
-            ['name' => 'Test User 2', 'email' => 'test2@example.com', 'password' => bcrypt('password')],
+            ['name' => 'Test User 2', 'email' => 'test2@example.com', 'password' => bcrypt('password'), 'role' => 'passenger'],
         ]);
 
         DB::table('rides')->insert([
-            ['passenger_id' => 1, 'pickup_lat' => -1.2921, 'pickup_lng' => 36.8219, 'dest_lat' => -1.3021, 'dest_lng' => 36.8319, 'fare' => 5000, 'status' => 'completed'],
-            ['passenger_id' => 1, 'pickup_lat' => -1.2921, 'pickup_lng' => 36.8219, 'dest_lat' => -1.3021, 'dest_lng' => 36.8319, 'fare' => 3000, 'status' => 'active'],
+            ['passenger_id' => $userId, 'pickup_lat' => -1.2921, 'pickup_lng' => 36.8219, 'dest_lat' => -1.3021, 'dest_lng' => 36.8319, 'fare' => 5000, 'status' => 'completed'],
+            ['passenger_id' => $userId, 'pickup_lat' => -1.2921, 'pickup_lng' => 36.8219, 'dest_lat' => -1.3021, 'dest_lng' => 36.8319, 'fare' => 3000, 'status' => 'ongoing'],
         ]);
 
         $response = $this->get('/metrics');
