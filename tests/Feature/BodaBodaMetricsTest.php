@@ -22,8 +22,8 @@ class BodaBodaMetricsTest extends TestCase
         ]);
 
         DB::table('rides')->insert([
-            ['fare' => 5000, 'status' => 'completed'],
-            ['fare' => 3000, 'status' => 'active'],
+            ['passenger_id' => 1, 'pickup_lat' => -1.2921, 'pickup_lng' => 36.8219, 'dest_lat' => -1.3021, 'dest_lng' => 36.8319, 'fare' => 5000, 'status' => 'completed'],
+            ['passenger_id' => 1, 'pickup_lat' => -1.2921, 'pickup_lng' => 36.8219, 'dest_lat' => -1.3021, 'dest_lng' => 36.8319, 'fare' => 3000, 'status' => 'active'],
         ]);
 
         $response = $this->get('/metrics');

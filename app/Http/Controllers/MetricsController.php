@@ -217,7 +217,11 @@ class MetricsController extends Controller
      */
     private function getCpuUsage()
     {
+        // Get CPU usage from load average, normalized to percentage (0-100)
         $load = sys_getloadavg();
-        return ($load[0] ?? 0) * 100; // Convert to percentage
+        $cpuCount = (int)shell_exec('nproc') ?: 1;
+        $percentage = ($load[0] / $cpuCount) * 100;
+        // Cap at 100% to ensure reasonable values
+        return min(100, max(0, $percentage));
     }
 }
