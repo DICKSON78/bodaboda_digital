@@ -1,4 +1,4 @@
-name: BodaBoda Digital CI Pipeline
+name: BodaBoda Digital CI/CD Pipeline
 
 on:
   push:
@@ -12,7 +12,6 @@ env:
 
 jobs:
   test-and-build:
-
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,11 +27,7 @@ jobs:
           MYSQL_PASSWORD: root
         ports:
           - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+        options: --health-cmd="mysqladmin ping -h localhost" --health-interval=10s --health-timeout=5s --health-retries=5
 
     steps:
       - name: Checkout repository
@@ -88,21 +83,14 @@ jobs:
 
       - name: Run Tests
         run: php artisan test
-        continue-on-error: false
 
       - name: Run API Tests
         run: |
-          # Start Laravel server for API testing
           php artisan serve --host=127.0.0.1 --port=8000 > /tmp/laravel.log 2>&1 &
           SERVER_PID=$!
           sleep 5
-          
-          # Test basic endpoints
           curl -v http://127.0.0.1:8000/ || true
-          
-          # Kill the server
           kill $SERVER_PID || true
-        continue-on-error: true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226
@@ -121,9 +109,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
+            type=raw,value=staging
+            type=raw,value=production
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
@@ -138,12 +125,8 @@ jobs:
 
       - name: Run Security Scan
         run: |
-          # Install security scanner
           composer require --dev enlightn/security-checker
-          
-          # Run security check
           vendor/bin/security-checker security:check
-        continue-on-error: false
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -161,31 +144,60 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Deploy to local Docker staging
+      - name: Deploy to Staging
         run: |
-          echo " Deploying to local Docker staging environment..."
-          echo " CI pipeline completed successfully!"
-          echo " Docker image built and ready for local deployment"
-          echo ""
-          echo " Local Staging Setup:"
-          echo " 1. Pull the latest Docker image:"
-          echo "    docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main"
-          echo ""
-          echo " 2. Run staging environment locally:"
-          echo "    docker-compose -f docker-compose.staging.yml up -d"
-          echo ""
-          echo " 3. Access local staging:"
-          echo "    Application: http://localhost:8001"
-          echo "    Grafana: http://localhost:3002"
-          echo "    Database: localhost:3307"
-          echo ""
-          echo " What local staging does:"
-          echo " - Pre-production testing on your machine"
-          echo " - Tests new features before production"
-          echo " - Validates Docker deployment locally"
-          echo " - Performance testing on local hardware"
-          echo " - User acceptance testing without cloud costs"
-          echo " - Bug verification and fixes in isolated environment"
+          echo "Deploying to STAGING environment"
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging
+          docker stop bodaboda-staging 2>/dev/null || true
+          docker rm bodaboda-staging 2>/dev/null || true
+          docker run -d --name bodaboda-staging -p 8080:80 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging
+          echo "Staging deployment completed"
+
+      - name: Verify Staging
+        run: |
+          echo "Verifying staging deployment"
+          sleep 10
+          if curl -f -s -o /dev/null http://localhost:8080; then
+            echo "Staging is running"
+          else
+            echo "Staging failed to respond"
+            exit 1
+          fi
+
+  approval-gate:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production-approval
+    steps:
+      - name: Wait for Approval
+        run: echo "Waiting for Release Manager approval before production"
+
+  deploy-production:
+    needs: approval-gate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+    
+    steps:
+      - name: Deploy to Production
+        run: |
+          echo "Deploying to PRODUCTION environment"
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:production
+          docker stop bodaboda-prod 2>/dev/null || true
+          docker rm bodaboda-prod 2>/dev/null || true
+          docker run -d --name bodaboda-prod -p 80:80 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:production
+          echo "Production deployment completed"
+
+      - name: Verify Production
+        run: |
+          echo "Verifying production deployment"
+          sleep 10
+          if curl -f -s -o /dev/null http://localhost; then
+            echo "Production is running"
+          else
+            echo "Production failed to respond"
+            exit 1
+          fi
