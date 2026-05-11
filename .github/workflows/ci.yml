@@ -109,8 +109,6 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=staging
-            type=raw,value=production
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
@@ -146,12 +144,12 @@ jobs:
     steps:
       - name: Deploy to Staging
         run: |
-          echo "Deploying to STAGING environment"
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging
+          echo "Deploying to STAGING on localhost"
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           docker stop bodaboda-staging 2>/dev/null || true
           docker rm bodaboda-staging 2>/dev/null || true
-          docker run -d --name bodaboda-staging -p 8080:80 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging
-          echo "Staging deployment completed"
+          docker run -d --name bodaboda-staging -p 8080:80 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          echo "Staging running at http://localhost:8080"
 
       - name: Verify Staging
         run: |
@@ -178,18 +176,16 @@ jobs:
     needs: approval-gate
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment:
-      name: production
     
     steps:
       - name: Deploy to Production
         run: |
-          echo "Deploying to PRODUCTION environment"
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:production
+          echo "Deploying to PRODUCTION on localhost"
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           docker stop bodaboda-prod 2>/dev/null || true
           docker rm bodaboda-prod 2>/dev/null || true
-          docker run -d --name bodaboda-prod -p 80:80 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:production
-          echo "Production deployment completed"
+          docker run -d --name bodaboda-prod -p 80:80 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          echo "Production running at http://localhost"
 
       - name: Verify Production
         run: |
