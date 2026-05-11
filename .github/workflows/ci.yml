@@ -207,9 +207,10 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sleep 5
           
-          # Fix storage permissions
-          docker exec bodaboda-staging-app mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
-          docker exec bodaboda-staging-app chmod -R 777 storage bootstrap/cache
+          # Fix storage permissions as root user
+          docker exec -u root bodaboda-staging-app mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
+          docker exec -u root bodaboda-staging-app chown -R www-data:www-data storage bootstrap/cache
+          docker exec -u root bodaboda-staging-app chmod -R 775 storage bootstrap/cache
           
           docker exec bodaboda-staging-app php artisan migrate --force || true
           docker exec bodaboda-staging-app php artisan storage:link || true
@@ -376,9 +377,10 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sleep 5
           
-          # Fix storage permissions
-          docker exec bodaboda-prod-app mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
-          docker exec bodaboda-prod-app chmod -R 777 storage bootstrap/cache
+          # Fix storage permissions as root user
+          docker exec -u root bodaboda-prod-app mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
+          docker exec -u root bodaboda-prod-app chown -R www-data:www-data storage bootstrap/cache
+          docker exec -u root bodaboda-prod-app chmod -R 775 storage bootstrap/cache
           
           docker exec bodaboda-prod-app php artisan migrate --force
           docker exec bodaboda-prod-app php artisan config:cache
