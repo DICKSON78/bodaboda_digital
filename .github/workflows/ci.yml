@@ -188,9 +188,15 @@ jobs:
         run: |
           docker stop bodaboda-staging-app 2>/dev/null || true
           docker rm bodaboda-staging-app 2>/dev/null || true
+          # Create storage directories on host
+          mkdir -p /tmp/bodaboda-staging-storage/logs /tmp/bodaboda-staging-storage/framework/cache /tmp/bodaboda-staging-storage/framework/sessions /tmp/bodaboda-staging-storage/framework/views /tmp/bodaboda-staging-bootstrap/cache
+          chmod -R 775 /tmp/bodaboda-staging-storage /tmp/bodaboda-staging-bootstrap
+          
           docker run -d \
             --name bodaboda-staging-app \
             --network bodaboda-staging-net \
+            -v /tmp/bodaboda-staging-storage:/var/www/storage \
+            -v /tmp/bodaboda-staging-bootstrap:/var/www/bootstrap \
             -e APP_ENV=staging \
             -e APP_DEBUG=true \
             -e APP_KEY=${{ secrets.APP_KEY }} \
@@ -358,9 +364,15 @@ jobs:
         run: |
           docker stop bodaboda-prod-app 2>/dev/null || true
           docker rm bodaboda-prod-app 2>/dev/null || true
+          # Create storage directories on host
+          mkdir -p /tmp/bodaboda-prod-storage/logs /tmp/bodaboda-prod-storage/framework/cache /tmp/bodaboda-prod-storage/framework/sessions /tmp/bodaboda-prod-storage/framework/views /tmp/bodaboda-prod-bootstrap/cache
+          chmod -R 775 /tmp/bodaboda-prod-storage /tmp/bodaboda-prod-bootstrap
+          
           docker run -d \
             --name bodaboda-prod-app \
             --network bodaboda-prod-net \
+            -v /tmp/bodaboda-prod-storage:/var/www/storage \
+            -v /tmp/bodaboda-prod-bootstrap:/var/www/bootstrap \
             -e APP_ENV=production \
             -e APP_DEBUG=false \
             -e APP_KEY=${{ secrets.APP_KEY }} \
