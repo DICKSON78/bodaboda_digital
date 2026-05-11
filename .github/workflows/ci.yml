@@ -209,6 +209,8 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sleep 5
 
+          docker exec bodaboda-staging-app php artisan config:clear
+          docker exec bodaboda-staging-app php artisan cache:clear
           docker exec bodaboda-staging-app php artisan migrate --force || true
           docker exec bodaboda-staging-app php artisan storage:link || true
 
@@ -375,6 +377,8 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sleep 5
 
+          docker exec bodaboda-prod-app php artisan config:clear
+          docker exec bodaboda-prod-app php artisan cache:clear
           docker exec bodaboda-prod-app php artisan migrate --force
           docker exec bodaboda-prod-app php artisan config:cache
           docker exec bodaboda-prod-app php artisan route:cache
