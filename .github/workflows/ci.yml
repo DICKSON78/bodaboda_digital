@@ -191,6 +191,7 @@ jobs:
           docker run -d \
             --name bodaboda-staging-app \
             --network bodaboda-staging-net \
+            --user root \
             -e APP_ENV=staging \
             -e APP_DEBUG=true \
             -e APP_KEY=${{ secrets.APP_KEY }} \
@@ -204,15 +205,9 @@ jobs:
             -e CACHE_DRIVER=file \
             -e SESSION_DRIVER=file \
             -e QUEUE_CONNECTION=sync \
+            -e LOG_CHANNEL=stderr \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sleep 5
-
-          # Fix storage permissions before running artisan
-          docker exec -u root bodaboda-staging-app bash -c "
-            mkdir -p storage/logs storage/framework/sessions storage/framework/views storage/framework/cache bootstrap/cache &&
-            chmod -R 777 storage bootstrap/cache &&
-            chown -R www-data:www-data storage bootstrap/cache
-          "
 
           docker exec bodaboda-staging-app php artisan migrate --force || true
           docker exec bodaboda-staging-app php artisan storage:link || true
@@ -362,6 +357,7 @@ jobs:
           docker run -d \
             --name bodaboda-prod-app \
             --network bodaboda-prod-net \
+            --user root \
             -e APP_ENV=production \
             -e APP_DEBUG=false \
             -e APP_KEY=${{ secrets.APP_KEY }} \
@@ -375,15 +371,9 @@ jobs:
             -e CACHE_DRIVER=file \
             -e SESSION_DRIVER=file \
             -e QUEUE_CONNECTION=sync \
+            -e LOG_CHANNEL=stderr \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sleep 5
-
-          # Fix storage permissions before running artisan
-          docker exec -u root bodaboda-prod-app bash -c "
-            mkdir -p storage/logs storage/framework/sessions storage/framework/views storage/framework/cache bootstrap/cache &&
-            chmod -R 777 storage bootstrap/cache &&
-            chown -R www-data:www-data storage bootstrap/cache
-          "
 
           docker exec bodaboda-prod-app php artisan migrate --force
           docker exec bodaboda-prod-app php artisan config:cache
