@@ -188,15 +188,18 @@ jobs:
         run: |
           docker stop bodaboda-staging-app 2>/dev/null || true
           docker rm bodaboda-staging-app 2>/dev/null || true
-          # Create storage directories on host
-          mkdir -p /tmp/bodaboda-staging-storage/logs /tmp/bodaboda-staging-storage/framework/cache /tmp/bodaboda-staging-storage/framework/sessions /tmp/bodaboda-staging-storage/framework/views /tmp/bodaboda-staging-bootstrap/cache
-          chmod -R 775 /tmp/bodaboda-staging-storage /tmp/bodaboda-staging-bootstrap
-          
+
+          # Only create storage directories — do NOT mount bootstrap
+          mkdir -p /tmp/bodaboda-staging-storage/logs \
+                   /tmp/bodaboda-staging-storage/framework/cache \
+                   /tmp/bodaboda-staging-storage/framework/sessions \
+                   /tmp/bodaboda-staging-storage/framework/views
+          chmod -R 775 /tmp/bodaboda-staging-storage
+
           docker run -d \
             --name bodaboda-staging-app \
             --network bodaboda-staging-net \
             -v /tmp/bodaboda-staging-storage:/var/www/storage \
-            -v /tmp/bodaboda-staging-bootstrap:/var/www/bootstrap \
             -e APP_ENV=staging \
             -e APP_DEBUG=true \
             -e APP_KEY=${{ secrets.APP_KEY }} \
@@ -212,12 +215,12 @@ jobs:
             -e QUEUE_CONNECTION=sync \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sleep 5
-          
-          # Fix storage permissions as root user
-          docker exec -u root bodaboda-staging-app mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
-          docker exec -u root bodaboda-staging-app chown -R www-data:www-data storage bootstrap/cache
-          docker exec -u root bodaboda-staging-app chmod -R 775 storage bootstrap/cache
-          
+
+          # Fix permissions — storage only; bootstrap/cache lives inside the image
+          docker exec -u root bodaboda-staging-app chown -R www-data:www-data storage
+          docker exec -u root bodaboda-staging-app chmod -R 775 storage
+          docker exec -u root bodaboda-staging-app chmod -R 775 bootstrap/cache
+
           docker exec bodaboda-staging-app php artisan migrate --force || true
           docker exec bodaboda-staging-app php artisan storage:link || true
 
@@ -257,7 +260,6 @@ jobs:
           echo "Verifying staging deployment..."
           sleep 10
 
-          # Check containers are running
           if docker ps | grep -q bodaboda-staging-nginx; then
             echo "Nginx container is running"
           else
@@ -364,15 +366,18 @@ jobs:
         run: |
           docker stop bodaboda-prod-app 2>/dev/null || true
           docker rm bodaboda-prod-app 2>/dev/null || true
-          # Create storage directories on host
-          mkdir -p /tmp/bodaboda-prod-storage/logs /tmp/bodaboda-prod-storage/framework/cache /tmp/bodaboda-prod-storage/framework/sessions /tmp/bodaboda-prod-storage/framework/views /tmp/bodaboda-prod-bootstrap/cache
-          chmod -R 775 /tmp/bodaboda-prod-storage /tmp/bodaboda-prod-bootstrap
-          
+
+          # Only create storage directories — do NOT mount bootstrap
+          mkdir -p /tmp/bodaboda-prod-storage/logs \
+                   /tmp/bodaboda-prod-storage/framework/cache \
+                   /tmp/bodaboda-prod-storage/framework/sessions \
+                   /tmp/bodaboda-prod-storage/framework/views
+          chmod -R 775 /tmp/bodaboda-prod-storage
+
           docker run -d \
             --name bodaboda-prod-app \
             --network bodaboda-prod-net \
             -v /tmp/bodaboda-prod-storage:/var/www/storage \
-            -v /tmp/bodaboda-prod-bootstrap:/var/www/bootstrap \
             -e APP_ENV=production \
             -e APP_DEBUG=false \
             -e APP_KEY=${{ secrets.APP_KEY }} \
@@ -388,12 +393,12 @@ jobs:
             -e QUEUE_CONNECTION=sync \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sleep 5
-          
-          # Fix storage permissions as root user
-          docker exec -u root bodaboda-prod-app mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
-          docker exec -u root bodaboda-prod-app chown -R www-data:www-data storage bootstrap/cache
-          docker exec -u root bodaboda-prod-app chmod -R 775 storage bootstrap/cache
-          
+
+          # Fix permissions — storage only; bootstrap/cache lives inside the image
+          docker exec -u root bodaboda-prod-app chown -R www-data:www-data storage
+          docker exec -u root bodaboda-prod-app chmod -R 775 storage
+          docker exec -u root bodaboda-prod-app chmod -R 775 bootstrap/cache
+
           docker exec bodaboda-prod-app php artisan migrate --force
           docker exec bodaboda-prod-app php artisan config:cache
           docker exec bodaboda-prod-app php artisan route:cache
