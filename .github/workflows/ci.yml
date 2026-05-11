@@ -293,11 +293,7 @@ jobs:
           echo ""
           echo "--- Pulled image details ---"
           docker inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            --format='Image ID: {{.Id}}
-Tags: {{.RepoTags}}
-Created: {{.Created}}
-Architecture: {{.Architecture}}
-OS: {{.Os}}' || true
+            --format='Image ID: {{.Id}}\nTags: {{.RepoTags}}\nCreated: {{.Created}}\nArchitecture: {{.Architecture}}\nOS: {{.Os}}' || true
 
       - name: "[TASK 4] Application Logs & Monitoring — Staging"
         if: always()
@@ -326,10 +322,7 @@ OS: {{.Os}}' || true
           echo "--- [6] Container Inspection (Health) ---"
           for container in bodaboda-staging-app bodaboda-staging-nginx bodaboda-staging-db; do
             echo ">> $container"
-            docker inspect $container --format='  Status: {{.State.Status}}
-  Running: {{.State.Running}}
-  Started: {{.State.StartedAt}}
-  RestartCount: {{.RestartCount}}' 2>/dev/null || echo "  Container not found"
+            docker inspect $container --format='  Status: {{.State.Status}}\n  Running: {{.State.Running}}\n  Started: {{.State.StartedAt}}\n  RestartCount: {{.RestartCount}}' 2>/dev/null || echo "  Container not found"
             echo ""
           done
           echo "================================================"
@@ -520,10 +513,7 @@ OS: {{.Os}}' || true
           echo "--- [6] Container Inspection (Health) ---"
           for container in bodaboda-prod-app bodaboda-prod-nginx bodaboda-prod-db; do
             echo ">> $container"
-            docker inspect $container --format='  Status: {{.State.Status}}
-  Running: {{.State.Running}}
-  Started: {{.State.StartedAt}}
-  RestartCount: {{.RestartCount}}' 2>/dev/null || echo "  Container not found"
+            docker inspect $container --format='  Status: {{.State.Status}}\n  Running: {{.State.Running}}\n  Started: {{.State.StartedAt}}\n  RestartCount: {{.RestartCount}}' 2>/dev/null || echo "  Container not found"
             echo ""
           done
           echo ""
