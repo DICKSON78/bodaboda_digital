@@ -141,37 +141,123 @@ jobs:
 
   deploy-staging:
     needs: test-and-build
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set lowercase image name
         run: |
           echo "IMAGE_NAME=$(echo '${{ github.repository_owner }}/${{ github.event.repository.name }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Deploy to Staging
         run: |
-          echo "Deploying to STAGING on localhost"
+          echo "Deploying to STAGING"
+
+          # Stop and remove old stack if running
+          docker compose -p bodaboda-staging down --remove-orphans 2>/dev/null || true
+
+          # Free port 8080 if occupied
+          fuser -k 8080/tcp 2>/dev/null || true
+          sleep 2
+
+          # Pull latest image
           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker stop bodaboda-staging 2>/dev/null || true
-          docker rm bodaboda-staging 2>/dev/null || true
-          docker run -d --name bodaboda-staging -p 8080:80 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          echo "Staging running at http://localhost:8080"
+
+          # Write a staging docker-compose override that uses port 8080
+          cat > /tmp/docker-compose.staging.yml << 'COMPOSE'
+          services:
+            app:
+              image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+              container_name: bodaboda-staging-app
+              restart: unless-stopped
+              working_dir: /var/www
+              environment:
+                APP_ENV: staging
+                APP_DEBUG: "false"
+                APP_KEY: ${{ secrets.APP_KEY }}
+                DB_CONNECTION: mysql
+                DB_HOST: db
+                DB_PORT: 3306
+                DB_DATABASE: ${{ secrets.STAGING_DB_DATABASE }}
+                DB_USERNAME: ${{ secrets.STAGING_DB_USERNAME }}
+                DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+
+            db:
+              image: mysql:8.0
+              container_name: bodaboda-staging-db
+              restart: unless-stopped
+              environment:
+                MYSQL_DATABASE: ${{ secrets.STAGING_DB_DATABASE }}
+                MYSQL_USER: ${{ secrets.STAGING_DB_USERNAME }}
+                MYSQL_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+                MYSQL_ROOT_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+              volumes:
+                - bodaboda-staging-dbdata:/var/lib/mysql
+
+            nginx:
+              image: nginx:alpine
+              container_name: bodaboda-staging-nginx
+              restart: unless-stopped
+              ports:
+                - "8080:80"
+              volumes:
+                - ./:/var/www
+                - ./nginx/conf.d/:/etc/nginx/conf.d/
+              depends_on:
+                - app
+
+          volumes:
+            bodaboda-staging-dbdata:
+              driver: local
+          COMPOSE
+
+          docker compose -p bodaboda-staging -f /tmp/docker-compose.staging.yml up -d
+          echo "Staging stack started"
+
+      - name: Run Migrations on Staging
+        run: |
+          echo "Running migrations on staging..."
+          sleep 15
+          docker exec bodaboda-staging-app php artisan migrate --force || true
 
       - name: Verify Staging
         run: |
-          echo "Verifying staging deployment"
-          sleep 10
-          if curl -f -s -o /dev/null http://localhost:8080; then
-            echo "Staging is running"
-          else
-            echo "Staging failed to respond"
-            exit 1
-          fi
+          echo "Waiting for nginx on port 8080..."
+
+          # Retry for up to 60 seconds
+          for i in {1..12}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 || echo "000")
+            echo "Attempt $i: HTTP $HTTP_CODE"
+
+            # Accept 2xx or 3xx (Laravel may redirect / to /login)
+            if [[ "$HTTP_CODE" =~ ^[23] ]]; then
+              echo "Staging is healthy (HTTP $HTTP_CODE)"
+              exit 0
+            fi
+
+            # Dump logs midway to help debug
+            if [ "$i" -eq 6 ]; then
+              echo "--- Nginx logs ---"
+              docker logs bodaboda-staging-nginx --tail 20 || true
+              echo "--- App logs ---"
+              docker logs bodaboda-staging-app --tail 20 || true
+            fi
+
+            sleep 5
+          done
+
+          echo "--- Final logs ---"
+          docker logs bodaboda-staging-nginx --tail 30 || true
+          docker logs bodaboda-staging-app --tail 30 || true
+          echo "Staging failed to respond after 60 seconds"
+          exit 1
 
   approval-gate:
     needs: deploy-staging
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: production-approval
@@ -181,30 +267,116 @@ jobs:
 
   deploy-production:
     needs: approval-gate
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set lowercase image name
         run: |
           echo "IMAGE_NAME=$(echo '${{ github.repository_owner }}/${{ github.event.repository.name }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Deploy to Production
         run: |
-          echo "Deploying to PRODUCTION on localhost"
+          echo "Deploying to PRODUCTION"
+
+          # Stop old stack
+          docker compose -p bodaboda-prod down --remove-orphans 2>/dev/null || true
+
+          # Free port 8000 if occupied (matches docker-compose.yml 8000:80)
+          fuser -k 8000/tcp 2>/dev/null || true
+          sleep 2
+
+          # Pull latest image
           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker stop bodaboda-prod 2>/dev/null || true
-          docker rm bodaboda-prod 2>/dev/null || true
-          docker run -d --name bodaboda-prod -p 80:80 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          echo "Production running at http://localhost"
+
+          # Write production docker-compose override using port 8000:80 (from README)
+          cat > /tmp/docker-compose.prod.yml << 'COMPOSE'
+          services:
+            app:
+              image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+              container_name: bodaboda-app
+              restart: unless-stopped
+              working_dir: /var/www
+              environment:
+                APP_ENV: production
+                APP_DEBUG: "false"
+                APP_KEY: ${{ secrets.APP_KEY }}
+                DB_CONNECTION: mysql
+                DB_HOST: db
+                DB_PORT: 3306
+                DB_DATABASE: ${{ secrets.PROD_DB_DATABASE }}
+                DB_USERNAME: ${{ secrets.PROD_DB_USERNAME }}
+                DB_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
+
+            db:
+              image: mysql:8.0
+              container_name: bodaboda-db
+              restart: unless-stopped
+              environment:
+                MYSQL_DATABASE: ${{ secrets.PROD_DB_DATABASE }}
+                MYSQL_USER: ${{ secrets.PROD_DB_USERNAME }}
+                MYSQL_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
+                MYSQL_ROOT_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
+              volumes:
+                - bodaboda-dbdata:/var/lib/mysql
+
+            nginx:
+              image: nginx:alpine
+              container_name: bodaboda-nginx
+              restart: unless-stopped
+              ports:
+                - "8000:80"
+              volumes:
+                - ./:/var/www
+                - ./nginx/conf.d/:/etc/nginx/conf.d/
+              depends_on:
+                - app
+
+          volumes:
+            bodaboda-dbdata:
+              driver: local
+          COMPOSE
+
+          docker compose -p bodaboda-prod -f /tmp/docker-compose.prod.yml up -d
+          echo "Production stack started"
+
+      - name: Run Migrations on Production
+        run: |
+          echo "Running migrations on production..."
+          sleep 15
+          docker exec bodaboda-app php artisan migrate --force
+          docker exec bodaboda-app php artisan config:cache
+          docker exec bodaboda-app php artisan route:cache
+          docker exec bodaboda-app php artisan view:cache
 
       - name: Verify Production
         run: |
-          echo "Verifying production deployment"
-          sleep 10
-          if curl -f -s -o /dev/null http://localhost; then
-            echo "Production is running"
-          else
-            echo "Production failed to respond"
-            exit 1
-          fi
+          echo "Waiting for nginx on port 8000..."
+
+          for i in {1..12}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000 || echo "000")
+            echo "Attempt $i: HTTP $HTTP_CODE"
+
+            if [[ "$HTTP_CODE" =~ ^[23] ]]; then
+              echo "Production is healthy (HTTP $HTTP_CODE)"
+              exit 0
+            fi
+
+            if [ "$i" -eq 6 ]; then
+              echo "--- Nginx logs ---"
+              docker logs bodaboda-nginx --tail 20 || true
+              echo "--- App logs ---"
+              docker logs bodaboda-app --tail 20 || true
+            fi
+
+            sleep 5
+          done
+
+          echo "--- Final logs ---"
+          docker logs bodaboda-nginx --tail 30 || true
+          docker logs bodaboda-app --tail 30 || true
+          echo "Production failed to respond after 60 seconds"
+          exit 1
