@@ -188,12 +188,9 @@ jobs:
         run: |
           docker stop bodaboda-staging-app 2>/dev/null || true
           docker rm bodaboda-staging-app 2>/dev/null || true
-
-          # No volume mounts — let the image supply storage and bootstrap intact
           docker run -d \
             --name bodaboda-staging-app \
             --network bodaboda-staging-net \
-            -w /var/www \
             -e APP_ENV=staging \
             -e APP_DEBUG=true \
             -e APP_KEY=${{ secrets.APP_KEY }} \
@@ -210,11 +207,11 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sleep 5
 
-          # Create any missing dirs and fix permissions — all inside the image
+          # Fix storage permissions before running artisan
           docker exec -u root bodaboda-staging-app bash -c "
-            mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache &&
-            chown -R www-data:www-data storage bootstrap/cache &&
-            chmod -R 775 storage bootstrap/cache
+            mkdir -p storage/logs storage/framework/sessions storage/framework/views storage/framework/cache bootstrap/cache &&
+            chmod -R 777 storage bootstrap/cache &&
+            chown -R www-data:www-data storage bootstrap/cache
           "
 
           docker exec bodaboda-staging-app php artisan migrate --force || true
@@ -362,12 +359,9 @@ jobs:
         run: |
           docker stop bodaboda-prod-app 2>/dev/null || true
           docker rm bodaboda-prod-app 2>/dev/null || true
-
-          # No volume mounts — let the image supply storage and bootstrap intact
           docker run -d \
             --name bodaboda-prod-app \
             --network bodaboda-prod-net \
-            -w /var/www \
             -e APP_ENV=production \
             -e APP_DEBUG=false \
             -e APP_KEY=${{ secrets.APP_KEY }} \
@@ -384,11 +378,11 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           sleep 5
 
-          # Create any missing dirs and fix permissions — all inside the image
+          # Fix storage permissions before running artisan
           docker exec -u root bodaboda-prod-app bash -c "
-            mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache &&
-            chown -R www-data:www-data storage bootstrap/cache &&
-            chmod -R 775 storage bootstrap/cache
+            mkdir -p storage/logs storage/framework/sessions storage/framework/views storage/framework/cache bootstrap/cache &&
+            chmod -R 777 storage bootstrap/cache &&
+            chown -R www-data:www-data storage bootstrap/cache
           "
 
           docker exec bodaboda-prod-app php artisan migrate --force
