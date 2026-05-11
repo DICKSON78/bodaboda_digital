@@ -379,7 +379,6 @@ jobs:
           docker exec bodaboda-prod-app php artisan config:clear
           docker exec bodaboda-prod-app php artisan migrate --force
           docker exec bodaboda-prod-app php artisan config:cache
-          docker exec bodaboda-prod-app php artisan route:cache
           docker exec bodaboda-prod-app php artisan view:cache
           docker exec bodaboda-prod-app php artisan storage:link || true
 
