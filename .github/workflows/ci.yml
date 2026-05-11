@@ -141,7 +141,7 @@ jobs:
 
   deploy-staging:
     needs: test-and-build
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
@@ -257,7 +257,7 @@ jobs:
 
   approval-gate:
     needs: deploy-staging
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: production-approval
@@ -267,7 +267,7 @@ jobs:
 
   deploy-production:
     needs: approval-gate
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
