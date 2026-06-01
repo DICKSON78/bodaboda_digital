@@ -71,7 +71,7 @@ Route::middleware(['auth'])->group(function () {
     // Rider Only Routes
     Route::middleware(['role:rider'])->group(function () {
         Route::get('/rider/apply', [RiderController::class, 'apply'])->name('rider.apply');
-        Route::post('/rider/apply', [RiderController::class, 'store'])->name('rider.store');
+        Route::post('/rider/apply', [RiderController::class, 'store'])->name('rider.apply.store');//Changed from rider.store
         Route::post('/rider/toggle', [RiderController::class, 'toggleStatus'])->name('rider.toggle')->middleware('throttle:10,1');
         
         Route::post('/rides/{ride}/accept', [RideController::class, 'accept'])->name('rides.accept')->middleware('throttle:20,1');
