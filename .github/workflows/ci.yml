@@ -36,7 +36,7 @@ jobs:
         ports:
           - 1883:1883
         volumes:
-          - ${{ github.workspace }}/mosquitto/mosquitto-ci.conf:/mosquitto/config/mosquitto.conf:ro
+          - ${{ github.workspace }}/mosquitto-ci/:/mosquitto/config/:ro
         options: >-
           --health-cmd="mosquitto_sub -t test -C 1 -W 3 || exit 1"
           --health-interval=5s
