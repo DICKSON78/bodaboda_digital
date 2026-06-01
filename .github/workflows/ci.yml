@@ -31,18 +31,6 @@ jobs:
           - 3306:3306
         options: --health-cmd="mysqladmin ping -h localhost" --health-interval=10s --health-timeout=5s --health-retries=5
 
-      mosquitto:
-        image: eclipse-mosquitto:2
-        ports:
-          - 1883:1883
-        volumes:
-          - ${{ github.workspace }}/mosquitto-ci/:/mosquitto/config/:ro
-        options: >-
-          --health-cmd="mosquitto_sub -t test -C 1 -W 3 || exit 1"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=10
-
       redis:
         image: redis:7-alpine
         ports:
@@ -60,6 +48,23 @@ jobs:
       - name: Set lowercase image name
         run: |
           echo "IMAGE_NAME=$(echo '${{ github.repository_owner }}/${{ github.event.repository.name }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Start Mosquitto
+        run: |
+          docker run -d \
+            --name mosquitto \
+            -p 1883:1883 \
+            --entrypoint /bin/sh \
+            eclipse-mosquitto:2 \
+            -c "echo 'listener 1883' > /mosquitto/config/mosquitto.conf && echo 'allow_anonymous true' >> /mosquitto/config/mosquitto.conf && exec /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf"
+          for i in $(seq 1 10); do
+            if docker exec mosquitto mosquitto_sub -t test -C 1 -W 3 2>/dev/null; then
+              echo "Mosquitto ready"
+              break
+            fi
+            echo "Waiting for Mosquitto... attempt $i"
+            sleep 2
+          done
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
