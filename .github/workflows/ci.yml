@@ -35,11 +35,13 @@ jobs:
         image: eclipse-mosquitto:2
         ports:
           - 1883:1883
+        volumes:
+          - ${{ github.workspace }}/mosquitto/mosquitto-ci.conf:/mosquitto/config/mosquitto.conf:ro
         options: >-
-          --health-cmd="timeout 5 mosquitto_sub -t test -C 1 || true"
-          --health-interval=10s
+          --health-cmd="mosquitto_sub -t test -C 1 -W 3 || exit 1"
+          --health-interval=5s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=10
 
       redis:
         image: redis:7-alpine
