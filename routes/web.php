@@ -69,16 +69,16 @@ Route::middleware(['auth'])->group(function () {
     })->name('logout');
 
     // Rider Only Routes
-        Route::middleware(['role:rider'])->group(function () {
-            Route::get('/rider/apply', [RiderController::class, 'apply'])->name('rider.apply');
-            Route::post('/rider/apply', [RiderController::class, 'store'])->name('rider.store');
-            Route::post('/rider/toggle', [RiderController::class, 'toggleStatus'])->name('rider.toggle')->middleware('throttle:10,1');
-            
-            Route::post('/rides/{ride}/accept', [RideController::class, 'accept'])->name('rides.accept')->middleware('throttle:20,1');
-            Route::post('/rides/{ride}/decline', [RideController::class, 'decline'])->name('rides.decline');
-            Route::post('/rides/{ride}/start', [RideController::class, 'start'])->name('rides.start');
-            Route::post('/rides/{ride}/complete', [RideController::class, 'complete'])->name('rides.complete');
-            Route::post('/location/update', [App\Http\Controllers\LocationController::class, 'update'])->name('location.update')->middleware('throttle:60,1');
+    Route::middleware(['role:rider'])->group(function () {
+        Route::get('/rider/apply', [RiderController::class, 'apply'])->name('rider.apply');
+        Route::post('/rider/apply', [RiderController::class, 'store'])->name('rider.store');
+        Route::post('/rider/toggle', [RiderController::class, 'toggleStatus'])->name('rider.toggle')->middleware('throttle:10,1');
+        
+        Route::post('/rides/{ride}/accept', [RideController::class, 'accept'])->name('rides.accept')->middleware('throttle:20,1');
+        Route::post('/rides/{ride}/decline', [RideController::class, 'decline'])->name('rides.decline');
+        Route::post('/rides/{ride}/start', [RideController::class, 'start'])->name('rides.start');
+        Route::post('/rides/{ride}/complete', [RideController::class, 'complete'])->name('rides.complete');
+        Route::post('/location/update', [App\Http\Controllers\LocationController::class, 'update'])->name('location.update')->middleware('throttle:60,1');
     });
 
     Route::post('/rides/{ride}/cancel', [RideController::class, 'cancel'])->name('rides.cancel');
