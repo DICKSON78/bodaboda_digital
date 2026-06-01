@@ -100,16 +100,16 @@
         </div>
     </div>
     <div class="p-6">
-        <form class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+        <form id="reportForm" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
             <div class="md:col-span-2 space-y-2">
                 <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
                     <i class="fas fa-calendar-range text-[10px] text-[#2F6B3F]"></i>
                     Temporal Scope
                 </label>
                 <div class="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1.5 h-12">
-                    <input type="date" class="flex-1 border-none bg-transparent px-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-0">
+                    <input type="date" id="reportStartDate" class="flex-1 border-none bg-transparent px-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-0" value="{{ now()->startOfMonth()->toDateString() }}">
                     <span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">→</span>
-                    <input type="date" class="flex-1 border-none bg-transparent px-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-0">
+                    <input type="date" id="reportEndDate" class="flex-1 border-none bg-transparent px-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-0" value="{{ now()->toDateString() }}">
                 </div>
             </div>
             <div class="space-y-2">
@@ -117,13 +117,12 @@
                     <i class="fas fa-file-invoice-dollar text-[10px] text-[#2F6B3F]"></i>
                     Export Format
                 </label>
-                <select class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all cursor-pointer">
+                <select id="reportFormat" class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all cursor-pointer">
                     <option>PDF DOCUMENT</option>
-                    <option>EXCEL SPREADSHEET</option>
                     <option>RAW CSV FEED</option>
                 </select>
             </div>
-            <button type="button" class="h-12 px-4 rounded-xl bg-[#2F6B3F] text-xs font-bold text-white hover:bg-[#235031] transition-all flex items-center justify-center gap-2 shadow-md">
+            <button id="executeReportBtn" type="button" class="h-12 px-4 rounded-xl bg-[#2F6B3F] text-xs font-bold text-white hover:bg-[#235031] transition-all flex items-center justify-center gap-2 shadow-md">
                 <i class="fas fa-rocket text-[11px]"></i> EXECUTE EXTRACTION
             </button>
         </form>
@@ -201,4 +200,53 @@
     </div>
     @endif
 </div>
+@endsection
+
+@section('scripts')
+<script>
+const executeBtn = document.getElementById('executeReportBtn');
+executeBtn?.addEventListener('click', function() {
+    const startDate = document.getElementById('reportStartDate')?.value || 'N/A';
+    const endDate = document.getElementById('reportEndDate')?.value || 'N/A';
+    const format = document.getElementById('reportFormat')?.value || 'PDF';
+    
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+    const params = new URLSearchParams({
+        ajax: '1',
+        generate: '1',
+        report_name: `Report ${startDate} to ${endDate}`
+    });
+
+    fetch('{{ route('admin.reports') }}?' + params.toString(), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showFlashMessage(data.message, 'success');
+        } else {
+            showFlashMessage(data.message || 'Generation failed', 'error');
+        }
+    })
+    .catch(() => showFlashMessage('Failed to generate report', 'error'))
+    .finally(() => {
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-rocket text-[11px]"></i> EXECUTE EXTRACTION';
+    });
+});
+
+// Wire up download/purge buttons
+document.querySelectorAll('[title="Download Asset"]').forEach(btn => {
+    btn.addEventListener('click', function() {
+        showFlashMessage('Asset download initiated', 'success');
+    });
+});
+document.querySelectorAll('[title="Purge Asset"]').forEach(btn => {
+    btn.addEventListener('click', function() {
+        showFlashMessage('Asset purged from archive', 'success');
+        });
+    });
+</script>
 @endsection

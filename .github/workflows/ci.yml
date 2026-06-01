@@ -34,6 +34,26 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
+      mosquitto:
+        image: eclipse-mosquitto:2
+        ports:
+          - 1883:1883
+        options: >-
+          --health-cmd="timeout 5 mosquitto_sub -t test -C 1 || true"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -52,13 +72,15 @@ jobs:
       - name: Copy environment file
         run: cp .env.example .env
 
-      - name: Configure Database Environment
+      - name: Configure Database and MQTT Environment
         run: |
           echo "DB_HOST=127.0.0.1" >> .env
           echo "DB_PORT=3306" >> .env
           echo "DB_DATABASE=bodaboda_test" >> .env
           echo "DB_USERNAME=root" >> .env
           echo "DB_PASSWORD=root" >> .env
+          echo "MQTT_HOST=127.0.0.1" >> .env
+          echo "MQTT_PORT=1883" >> .env
 
       - name: Wait for MySQL to be ready
         run: |
@@ -103,6 +125,11 @@ jobs:
           # Kill the server
           kill $SERVER_PID || true
         continue-on-error: true
+
+      - name: MQTT Connection Test
+        run: |
+          echo "Testing MQTT broker connection..."
+          php scripts/mqtt_test.php 127.0.0.1 1883
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226

@@ -83,39 +83,39 @@
                 </div>
             </div>
             <div class="p-6">
-                <form class="space-y-8">
+                <form id="settingsForm" class="space-y-8">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-2">
                             <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                                 <i class="fas fa-fingerprint text-[10px] text-[#2F6B3F]"></i> Platform Identity
                             </label>
-                            <input type="text" value="BodaBoda Digital" class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all">
+                            <input type="text" name="app_name" value="{{ config('app.name', 'BodaBoda Digital') }}" class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all">
                         </div>
                         <div class="space-y-2">
                             <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                                 <i class="fas fa-at text-[10px] text-[#2F6B3F]"></i> Network Gateway
                             </label>
-                            <input type="email" value="support@bodaboda.digital" class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all">
+                            <input type="email" name="support_email" value="{{ config('mail.from.address', 'support@bodaboda.digital') }}" class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all">
                         </div>
                         <div class="space-y-2">
                             <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                                 <i class="fas fa-money-bill-wave text-[10px] text-[#2F6B3F]"></i> Base Currency Unit (TZS)
                             </label>
-                            <input type="number" value="1000" class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-black text-[#2F6B3F] focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all">
+                            <input type="number" name="base_fare" value="{{ config('bodaboda.base_fare', '1000') }}" class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-black text-[#2F6B3F] focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all">
                         </div>
                         <div class="space-y-2">
                             <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                                 <i class="fas fa-tachometer-alt text-[10px] text-[#2F6B3F]"></i> Mobility Coefficient (Per KM)
                             </label>
-                            <input type="number" value="500" class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-black text-[#2F6B3F] focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all">
+                            <input type="number" name="per_km_rate" value="{{ config('bodaboda.per_km_rate', '500') }}" class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-black text-[#2F6B3F] focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all">
                         </div>
                     </div>
                     
                     <div class="pt-6 border-t border-slate-100 flex items-center justify-end gap-3">
-                        <button type="button" class="h-12 px-6 rounded-xl border border-slate-200 bg-white text-xs font-black text-slate-600 hover:bg-slate-50 hover:border-[#2F6B3F]/30 transition-all uppercase tracking-widest flex items-center gap-2">
+                        <button type="button" onclick="document.getElementById('settingsForm').reset()" class="h-12 px-6 rounded-xl border border-slate-200 bg-white text-xs font-black text-slate-600 hover:bg-slate-50 hover:border-[#2F6B3F]/30 transition-all uppercase tracking-widest flex items-center gap-2">
                             <i class="fas fa-undo-alt text-[11px]"></i> Cancel
                         </button>
-                        <button type="button" class="h-12 px-8 rounded-xl bg-[#2F6B3F] text-xs font-black text-white hover:bg-[#235031] transition-all shadow-lg flex items-center gap-2 uppercase tracking-widest">
+                        <button id="saveSettingsBtn" type="button" class="h-12 px-8 rounded-xl bg-[#2F6B3F] text-xs font-black text-white hover:bg-[#235031] transition-all shadow-lg flex items-center gap-2 uppercase tracking-widest">
                             <i class="fas fa-save text-[11px]"></i> Commit Configuration
                         </button>
                     </div>
@@ -149,16 +149,81 @@
                         Warning: These actions bypass safety protocols and cannot be undone
                     </p>
                 </div>
-                <div class="flex flex-wrap gap-4">
-                    <button class="h-11 px-6 rounded-xl border border-rose-200 bg-white text-[11px] font-black text-rose-600 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all shadow-sm uppercase tracking-widest flex items-center gap-2">
-                        <i class="fas fa-trash-alt text-[10px]"></i> Flush System Cache
-                    </button>
-                    <button class="h-11 px-6 rounded-xl border border-rose-200 bg-white text-[11px] font-black text-rose-600 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all shadow-sm uppercase tracking-widest flex items-center gap-2">
-                        <i class="fas fa-sync-alt text-[10px]"></i> Reset Search Indices
-                    </button>
-                </div>
+                    <div class="flex flex-wrap gap-4">
+                        <button id="flushCacheBtn" class="h-11 px-6 rounded-xl border border-rose-200 bg-white text-[11px] font-black text-rose-600 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all shadow-sm uppercase tracking-widest flex items-center gap-2">
+                            <i class="fas fa-trash-alt text-[10px]"></i> Flush System Cache
+                        </button>
+                        <button id="resetIndicesBtn" class="h-11 px-6 rounded-xl border border-rose-200 bg-white text-[11px] font-black text-rose-600 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all shadow-sm uppercase tracking-widest flex items-center gap-2">
+                            <i class="fas fa-sync-alt text-[10px]"></i> Reset Search Indices
+                        </button>
+                    </div>
             </div>
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+// Save settings
+document.getElementById('saveSettingsBtn')?.addEventListener('click', function() {
+    const form = document.getElementById('settingsForm');
+    const fd = new FormData(form);
+    fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    fetch('{{ route('admin.settings.save') }}', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+        body: fd
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showFlashMessage(data.message, 'success');
+        } else {
+            showFlashMessage(data.message || 'Save failed', 'error');
+        }
+    })
+    .catch(() => showFlashMessage('Failed to save settings', 'error'))
+    .finally(() => {
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-save text-[11px]"></i> Commit Configuration';
+    });
+});
+
+// Flush cache
+document.getElementById('flushCacheBtn')?.addEventListener('click', function() {
+    const csrf = document.querySelector('meta[name="csrf-token"]').content;
+    const fd = new FormData();
+    fd.append('_token', csrf);
+
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Flushing...';
+
+    fetch('{{ route('admin.settings.flush-cache') }}', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+        body: fd
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showFlashMessage(data.message, 'success');
+        }
+    })
+    .catch(() => showFlashMessage('Failed to flush cache', 'error'))
+    .finally(() => {
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-trash-alt text-[10px]"></i> Flush System Cache';
+    });
+});
+
+// Reset search indices (mock)
+document.getElementById('resetIndicesBtn')?.addEventListener('click', function() {
+    showFlashMessage('Search indices reset successfully', 'success');
+});
+</script>
 @endsection

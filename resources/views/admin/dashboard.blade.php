@@ -282,16 +282,31 @@
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('revenueChart').getContext('2d');
+const revenueCanvas = document.getElementById('revenueChart');
+if (revenueCanvas) {
+    const ctx = revenueCanvas.getContext('2d');
     
-    const chart = new Chart(ctx, {
+    // Generate last 7 days labels and fill with real data
+    const weeklyData = @json($weeklyRevenueData);
+    const labels = [];
+    const data = [];
+    
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        const dayName = d.toLocaleDateString('en-US', { weekday: 'long' });
+        labels.push(dayName);
+        data.push(weeklyData[dateStr] ? parseInt(weeklyData[dateStr].total) : 0);
+    }
+
+    new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+            labels: labels,
             datasets: [{
                 label: 'Revenue (TZS)',
-                data: [42000, 55000, 48000, 68000, 72000, 95000, 88000],
+                data: data,
                 borderColor: '#2F6B3F',
                 borderWidth: 4,
                 fill: true,
@@ -346,6 +361,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-});
+}
 </script>
 @endsection

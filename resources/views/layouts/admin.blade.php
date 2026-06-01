@@ -659,136 +659,242 @@
         </div>
     </main>
 
-    <!-- ============================================
-       CONFIRM ACTION MODAL
-       ============================================ -->
-    <div id="confirmModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 hidden" style="z-index:9999">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all duration-300" id="confirmModalContent" style="transform:scale(0.95)">
-            <div class="p-6 text-center">
-                <div id="confirmIcon" class="mx-auto mb-4" style="height:64px;width:64px;border-radius:50%;display:flex;align-items:center;justify-content:center"></div>
-                <h3 id="confirmTitle" class="text-xl font-bold text-gray-900 mb-2"></h3>
-                <p id="confirmMessage" class="text-gray-600 mb-2"></p>
-                <p id="confirmName" class="text-lg font-semibold mb-6"></p>
-                <div class="flex gap-3">
-                    <button onclick="closeConfirmModal()" class="flex-1 px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-all">
-                        <i class="fas fa-times mr-2"></i>Cancel
-                    </button>
-                    <form id="confirmForm" method="POST" class="flex-1">
-                        @csrf
-                        <input type="hidden" name="_method" id="confirmMethod" value="POST">
-                        <button type="submit" id="confirmBtn" class="w-full px-5 py-2.5 text-sm font-medium text-white rounded-lg transition-all flex items-center justify-center gap-2">
-                            <i id="confirmBtnIcon" class="fas fa-check"></i>
-                            <span id="confirmBtnText">Confirm</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+         <!-- ============================================
+        CONFIRM ACTION MODAL
+        ============================================ -->
+     <div id="confirmModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 hidden" style="z-index:9999">
+         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all duration-300" id="confirmModalContent" style="transform:scale(0.95)">
+             <div class="p-6 text-center">
+                 <div id="confirmIcon" class="mx-auto mb-4" style="height:64px;width:64px;border-radius:50%;display:flex;align-items:center;justify-content:center"></div>
+                 <h3 id="confirmTitle" class="text-xl font-bold text-gray-900 mb-2"></h3>
+                 <p id="confirmMessage" class="text-gray-600 mb-2"></p>
+                 <p id="confirmName" class="text-lg font-semibold mb-6"></p>
+                 <div class="flex gap-3">
+                     <button onclick="closeConfirmModal()" class="flex-1 px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-all">
+                         <i class="fas fa-times mr-2"></i>Cancel
+                     </button>
+                     <form id="confirmForm" method="POST" class="flex-1" onsubmit="return executeConfirmAction(event)">
+                         @csrf
+                         <input type="hidden" name="_method" id="confirmMethod" value="POST">
+                         <button type="submit" id="confirmBtn" class="w-full px-5 py-2.5 text-sm font-medium text-white rounded-lg transition-all flex items-center justify-center gap-2">
+                             <i id="confirmBtnIcon" class="fas fa-check"></i>
+                             <span id="confirmBtnText">Confirm</span>
+                         </button>
+                     </form>
+                 </div>
+             </div>
+         </div>
+     </div>
 
-    <!-- ============================================
-       SCRIPTS
-       ============================================ -->
-    <script>
-        // Show page when CSS is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            document.documentElement.classList.add('css-ready');
-            // Auto-dismiss flash messages after 5s
-            setTimeout(function() {
-                const flash = document.getElementById('flashMessage');
-                if (flash) flash.style.display = 'none';
-            }, 5000);
-        });
+     <!-- ============================================
+        SCRIPTS
+        ============================================ -->
+      <script>
+          // FOUC prevention - runs immediately (critical CSS is inlined)
+          document.documentElement.classList.add('css-ready');
 
-        // Mobile sidebar toggle
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('mobile-expanded');
-        }
+          // Show any persisted flash message from a previous AJAX action
+          showPersistedFlashMessage();
 
-        // Desktop sidebar toggle
-        function toggleDesktopSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.querySelector('.main-content');
-            const body = document.body;
-            sidebar.classList.toggle('collapsed');
-            mainContent.classList.toggle('sidebar-collapsed');
-            body.classList.toggle('sidebar-collapsed-state');
-        }
+          // Auto-dismiss flash messages after 5s
+          setTimeout(function() {
+              const flash = document.getElementById('flashMessage');
+              if (flash) flash.style.display = 'none';
+          }, 5000);
 
-        // Add mobile menu button for tablets/mobile
-        if (window.innerWidth <= 1024) {
-            const mobileMenuBtn = document.createElement('button');
-            mobileMenuBtn.className = 'fixed top-4 left-4 z-50 p-2 bg-primary text-white rounded-lg shadow-lg md:hidden';
-            mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
-            mobileMenuBtn.onclick = toggleSidebar;
-            document.body.appendChild(mobileMenuBtn);
-        }
+         // Mobile sidebar toggle
+         function toggleSidebar() {
+             const sidebar = document.getElementById('sidebar');
+             sidebar.classList.toggle('mobile-expanded');
+         }
 
-        // Handle window resize
-        let resizeTimer;
-        window.addEventListener('resize', function() {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(function() {
-                if (window.innerWidth > 1024) {
-                    document.getElementById('sidebar').classList.remove('mobile-expanded');
-                }
-            }, 250);
-        });
+         // Desktop sidebar toggle
+         function toggleDesktopSidebar() {
+             const sidebar = document.getElementById('sidebar');
+             const mainContent = document.querySelector('.main-content');
+             const body = document.body;
+             sidebar.classList.toggle('collapsed');
+             mainContent.classList.toggle('sidebar-collapsed');
+             body.classList.toggle('sidebar-collapsed-state');
+         }
 
-        // Confirm Modal
-        function showConfirmModal(action, url, name, method) {
-            method = method || 'POST';
-            const modal = document.getElementById('confirmModal');
-            const form = document.getElementById('confirmForm');
-            const icon = document.getElementById('confirmIcon');
-            const title = document.getElementById('confirmTitle');
-            const msg = document.getElementById('confirmMessage');
-            const nameEl = document.getElementById('confirmName');
-            const btn = document.getElementById('confirmBtn');
-            const btnText = document.getElementById('confirmBtnText');
-            const btnIcon = document.getElementById('confirmBtnIcon');
-            document.getElementById('confirmMethod').value = method;
-            form.action = url;
-            nameEl.textContent = name;
+         // Add mobile menu button for tablets/mobile
+         if (window.innerWidth <= 1024) {
+             const mobileMenuBtn = document.createElement('button');
+             mobileMenuBtn.className = 'fixed top-4 left-4 z-50 p-2 bg-primary text-white rounded-lg shadow-lg md:hidden';
+             mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+             mobileMenuBtn.onclick = toggleSidebar;
+             document.body.appendChild(mobileMenuBtn);
+         }
 
-            const configs = {
-                'approve':  { bg:'bg-green-100', ic:'fas fa-check-circle text-3xl text-green-600', t:'Confirm Approval', m:'Approve this rider?', btnCls:'bg-green-600 hover:bg-green-700', btnTxt:'Approve', btnIc:'fas fa-check' },
-                'suspend':  { bg:'bg-yellow-100', ic:'fas fa-user-slash text-3xl text-yellow-600', t:'Confirm Suspension', m:'Suspend this user?', btnCls:'bg-yellow-600 hover:bg-yellow-700', btnTxt:'Suspend', btnIc:'fas fa-user-slash' },
-                'activate': { bg:'bg-green-100', ic:'fas fa-user-check text-3xl text-green-600', t:'Confirm Activation', m:'Activate this user?', btnCls:'bg-green-600 hover:bg-green-700', btnTxt:'Activate', btnIc:'fas fa-user-check' },
-                'delete':   { bg:'bg-red-100', ic:'fas fa-trash-alt text-3xl text-red-600', t:'Confirm Deletion', m:'This action cannot be undone.', btnCls:'bg-red-600 hover:bg-red-700', btnTxt:'Delete', btnIc:'fas fa-trash' },
-                'reject':   { bg:'bg-red-100', ic:'fas fa-times-circle text-3xl text-red-600', t:'Confirm Rejection', m:'Reject this application?', btnCls:'bg-red-600 hover:bg-red-700', btnTxt:'Reject', btnIc:'fas fa-times' },
-            };
-            const c = configs[action] || configs['delete'];
-            icon.className = 'mx-auto mb-4 ' + c.bg;
-            icon.style.cssText = 'height:64px;width:64px;border-radius:50%;display:flex;align-items:center;justify-content:center';
-            icon.innerHTML = '<i class="' + c.ic + '"></i>';
-            title.textContent = c.t;
-            msg.textContent = c.m;
-            btn.className = 'w-full px-5 py-2.5 text-sm font-medium text-white rounded-lg transition-all flex items-center justify-center gap-2 ' + c.btnCls;
-            btnText.textContent = c.btnTxt;
-            btnIcon.className = c.btnIc;
-            modal.classList.remove('hidden');
-        }
-        function closeConfirmModal() {
-            document.getElementById('confirmModal').classList.add('hidden');
-        }
-        document.getElementById('confirmModal')?.addEventListener('click', function(e) {
-            if (e.target === this) closeConfirmModal();
-        });
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeConfirmModal();
-        });
-    </script>
-    <style>
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn {
-            animation: fadeIn 0.3s ease-out;
-        }
-    </style>
-    @yield('scripts')
+         // Handle window resize
+         let resizeTimer;
+         window.addEventListener('resize', function() {
+             clearTimeout(resizeTimer);
+             resizeTimer = setTimeout(function() {
+                 if (window.innerWidth > 1024) {
+                     document.getElementById('sidebar').classList.remove('mobile-expanded');
+                 }
+             }, 250);
+         });
+
+         // Confirm Modal
+         function showConfirmModal(action, url, name, method) {
+             method = method || 'POST';
+             const modal = document.getElementById('confirmModal');
+             const form = document.getElementById('confirmForm');
+             const icon = document.getElementById('confirmIcon');
+             const title = document.getElementById('confirmTitle');
+             const msg = document.getElementById('confirmMessage');
+             const nameEl = document.getElementById('confirmName');
+             const btn = document.getElementById('confirmBtn');
+             const btnText = document.getElementById('confirmBtnText');
+             const btnIcon = document.getElementById('confirmBtnIcon');
+             document.getElementById('confirmMethod').value = method;
+             form.action = url;
+             nameEl.textContent = name;
+
+             const configs = {
+                 'approve':  { bg:'bg-green-100', ic:'fas fa-check-circle text-3xl text-green-600', t:'Confirm Approval', m:'Approve this rider?', btnCls:'bg-green-600 hover:bg-green-700', btnTxt:'Approve', btnIc:'fas fa-check' },
+                 'suspend':  { bg:'bg-yellow-100', ic:'fas fa-user-slash text-3xl text-yellow-600', t:'Confirm Suspension', m:'Suspend this user?', btnCls:'bg-yellow-600 hover:bg-yellow-700', btnTxt:'Suspend', btnIc:'fas fa-user-slash' },
+                 'activate': { bg:'bg-green-100', ic:'fas fa-user-check text-3xl text-green-600', t:'Confirm Activation', m:'Activate this user?', btnCls:'bg-green-600 hover:bg-green-700', btnTxt:'Activate', btnIc:'fas fa-user-check' },
+                 'delete':   { bg:'bg-red-100', ic:'fas fa-trash-alt text-3xl text-red-600', t:'Confirm Deletion', m:'This action cannot be undone.', btnCls:'bg-red-600 hover:bg-red-700', btnTxt:'Delete', btnIc:'fas fa-trash' },
+                 'reject':   { bg:'bg-red-100', ic:'fas fa-times-circle text-3xl text-red-600', t:'Confirm Rejection', m:'Reject this application?', btnCls:'bg-red-600 hover:bg-red-700', btnTxt:'Reject', btnIc:'fas fa-times' },
+                 'cancel':   { bg:'bg-red-100', ic:'fas fa-ban text-3xl text-red-600', t:'Confirm Cancellation', m:'Cancel this ride?', btnCls:'bg-red-600 hover:bg-red-700', btnTxt:'Cancel Ride', btnIc:'fas fa-ban' },
+             };
+             const c = configs[action] || configs['delete'];
+             icon.className = 'mx-auto mb-4 ' + c.bg;
+             icon.style.cssText = 'height:64px;width:64px;border-radius:50%;display:flex;align-items:center;justify-content:center';
+             icon.innerHTML = '<i class="' + c.ic + '"></i>';
+             title.textContent = c.t;
+             msg.textContent = c.m;
+             btn.className = 'w-full px-5 py-2.5 text-sm font-medium text-white rounded-lg transition-all flex items-center justify-center gap-2 ' + c.btnCls;
+             btnText.textContent = c.btnTxt;
+             btnIcon.className = c.btnIc;
+             modal.classList.remove('hidden');
+         }
+         function closeConfirmModal() {
+             document.getElementById('confirmModal').classList.add('hidden');
+         }
+         document.getElementById('confirmModal')?.addEventListener('click', function(e) {
+             if (e.target === this) closeConfirmModal();
+         });
+         document.addEventListener('keydown', function(e) {
+             if (e.key === 'Escape') closeConfirmModal();
+         });
+
+         // Execute confirm action via AJAX
+         function executeConfirmAction(e) {
+             e.preventDefault();
+             const form = document.getElementById('confirmForm');
+             const btn = document.getElementById('confirmBtn');
+             const originalBtnHtml = btn.innerHTML;
+             const url = form.action;
+             const method = document.getElementById('confirmMethod').value;
+             
+             // Disable button and show loading state
+             btn.disabled = true;
+             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+             
+             // Prepare form data
+             const formData = new FormData(form);
+             
+             fetch(url, {
+                 method: method,
+                 headers: {
+                     'X-Requested-With': 'XMLHttpRequest',
+                     'Accept': 'application/json',
+                 },
+                 body: formData
+             })
+             .then(response => response.json())
+             .then(data => {
+                 btn.disabled = false;
+                 btn.innerHTML = originalBtnHtml;
+                 closeConfirmModal();
+                 
+                 if (data.success) {
+                     // Persist flash message for after reload
+                     persistFlashMessage(data.message, 'success');
+                     
+                     // If redirect is provided, go there; otherwise reload current page
+                     if (data.redirect) {
+                         window.location.href = data.redirect;
+                     } else {
+                         // Reload after short delay to show flash message
+                         setTimeout(() => {
+                             window.location.reload();
+                         }, 1500);
+                     }
+                 } else {
+                     showFlashMessage(data.message || 'Action failed', 'error');
+                 }
+             })
+             .catch(error => {
+                 btn.disabled = false;
+                 btn.innerHTML = originalBtnHtml;
+                 closeConfirmModal();
+                 showFlashMessage('An error occurred. Please try again.', 'error');
+             });
+         }
+
+         // Flash message functions
+         function showFlashMessage(message, type) {
+             // Remove any existing flash message
+             const existingFlash = document.getElementById('flashMessage');
+             if (existingFlash) {
+                 existingFlash.remove();
+             }
+             
+             const container = document.querySelector('.page-container');
+             if (!container) return;
+             
+             const flash = document.createElement('div');
+             flash.id = 'flashMessage';
+             flash.className = 'mb-6 p-4 ' + (type === 'success' ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200') + ' rounded-2xl flex items-center gap-3 animate-fadeIn';
+             
+             const iconClass = type === 'success' ? 'fas fa-check-circle text-emerald-600' : 'fas fa-times-circle text-rose-600';
+             
+             flash.innerHTML = `
+                 <div class="w-9 h-9 ${type === 'success' ? 'bg-emerald-100' : 'bg-rose-100'} rounded-xl flex items-center justify-center flex-shrink-0">
+                     <i class="${iconClass} text-base"></i>
+                 </div>
+                 <p class="flex-1 text-sm font-semibold ${type === 'success' ? 'text-emerald-800' : 'text-rose-800'}">${message}</p>
+                 <button onclick="this.parentElement.remove()" class="text-${type === 'success' ? 'emerald-400' : 'rose-400'} hover:text-${type === 'success' ? 'emerald-600' : 'rose-600'} transition-colors">
+                     <i class="fas fa-times text-xs"></i>
+                 </button>
+             `;
+             
+             container.insertBefore(flash, container.firstChild);
+             
+             // Auto-dismiss after 5s
+             setTimeout(() => {
+                 if (flash.parentElement) flash.remove();
+             }, 5000);
+         }
+         
+         function persistFlashMessage(message, type) {
+             sessionStorage.setItem('flash_message', JSON.stringify({ message, type }));
+         }
+         
+         function showPersistedFlashMessage() {
+             const flashData = sessionStorage.getItem('flash_message');
+             if (flashData) {
+                 const { message, type } = JSON.parse(flashData);
+                 showFlashMessage(message, type);
+                 sessionStorage.removeItem('flash_message');
+             }
+         }
+     </script>
+     <style>
+         @keyframes fadeIn {
+             from { opacity: 0; transform: translateY(-10px); }
+             to { opacity: 1; transform: translateY(0); }
+         }
+         .animate-fadeIn {
+             animation: fadeIn 0.3s ease-out;
+         }
+     </style>
+     @yield('scripts')
 </body>
 </html>

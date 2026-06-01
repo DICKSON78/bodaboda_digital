@@ -117,12 +117,49 @@
                     </div>
                 @endif
 
+                @if(auth()->user()->role === 'passenger' && $activeRide)
+                    <div class="scn-card border-l-4 border-primary">
+                        <div class="scn-card-header border-b border-slate-50 bg-primary/5">
+                            <div class="flex items-center justify-between">
+                                <h3 class="scn-card-title !text-sm !font-black !uppercase !tracking-tight !text-primary">Active Ride</h3>
+                                <div class="badge-pill !bg-primary/10 !border-primary/20">
+                                    <span class="badge-dot !bg-primary"></span>
+                                    <span class="text-[9px] font-black text-primary uppercase tracking-widest">Live</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="scn-card-content">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <div class="font-black text-slate-900 uppercase tracking-tight text-sm">Ride #{{ $activeRide->id }}</div>
+                                    <div class="text-[10px] text-slate-500 mt-1">{{ $activeRide->status }}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xl font-black text-primary">TZS {{ number_format($activeRide->fare) }}</div>
+                                </div>
+                            </div>
+                            @if($activeRide->rider)
+                                <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-4">
+                                    <img src="{{ $activeRide->rider->user->avatar }}" class="h-10 w-10 rounded-xl">
+                                    <div>
+                                        <div class="text-xs font-black text-slate-900">{{ $activeRide->rider->first_name }} {{ $activeRide->rider->last_name }}</div>
+                                        <div class="text-[9px] text-slate-500">{{ $activeRide->rider->bike_plate }}</div>
+                                    </div>
+                                </div>
+                            @endif
+                            <a href="{{ route('rides.show', $activeRide) }}" class="block w-full text-center py-3 bg-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/90 transition">
+                                View Ride
+                            </a>
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Ride History -->
                 <div class="scn-card">
                     <div class="scn-card-header border-b border-slate-50">
                         <div class="flex items-center justify-between">
                             <h3 class="scn-card-title !text-sm !font-black !uppercase !tracking-tight">Recent Activity</h3>
-                            <a href="#" class="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">View All</a>
+                            <a href="{{ route('rides.index') }}" class="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">View All</a>
                         </div>
                     </div>
                     <div class="scn-card-content p-0">
@@ -165,94 +202,130 @@
 @endsection
 
 @push('scripts')
+<script src="https://unpkg.com/mqtt@5.3.4/dist/mqtt.min.js"></script>
 @if(auth()->user()->role === 'rider')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Check for new ride requests every 5 seconds
-    let requestInterval = setInterval(checkRideRequests, 5000);
-    
-    function checkRideRequests() {
-        fetch('/api/ride-requests')
-            .then(response => response.json())
-            .then(data => {
-                if (data.requests && data.requests.length > 0) {
-                    displayRideRequests(data.requests);
-                } else {
-                    showNoRequests();
-                }
-            })
-            .catch(error => {
-                console.error('Error checking ride requests:', error);
-            });
-    }
-    
-    function displayRideRequests(requests) {
-        const container = document.getElementById('ride-requests-container');
-        
-        const requestsHtml = requests.map(request => `
-            <div class="border-l-4 border-primary bg-gradient-to-r from-primary/5 to-transparent p-6 rounded-xl mb-4 animate-in slide-in-from-right duration-500">
-                <div class="flex items-start justify-between mb-4">
-                    <div class="flex items-center">
-                        <img src="${request.user.avatar}" class="h-12 w-12 rounded-full border-2 border-primary/20 mr-4">
-                        <div>
-                            <h4 class="font-black text-primary">${request.user.name}</h4>
-                            <p class="text-sm text-text-secondary">📞 ${request.user.phone}</p>
-                            <p class="text-xs text-text-secondary mt-1">Requested ${request.created_at}</p>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-2xl font-black text-primary">TZS ${request.fare}</div>
-                        <div class="text-xs text-text-secondary">${request.distance} km</div>
-                    </div>
-                </div>
-                
-                <div class="space-y-3 mb-6">
-                    <div class="flex items-center gap-3">
-                        <div class="h-2.5 w-2.5 rounded-full bg-green-500 ring-4 ring-green-500/20"></div>
-                        <div class="flex-1">
-                            <p class="text-xs font-black text-text-secondary uppercase">Pickup</p>
-                            <p class="text-sm font-bold">${request.pickup_address}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-primary/20"></div>
-                        <div class="flex-1">
-                            <p class="text-xs font-black text-text-secondary uppercase">Destination</p>
-                            <p class="text-sm font-bold">${request.dest_address}</p>
-                        </div>
+    const wsUrl = `ws://${window.location.hostname}:9001`;
+    const container = document.getElementById('ride-requests-container');
+    let pendingRequests = new Map();
+
+    // Connect to Mosquitto via WebSocket with auth
+    const mqttClient = mqtt.connect(wsUrl, {
+        clientId: 'driver_dash_' + Math.random().toString(16).slice(2, 10),
+        clean: false,
+        username: '{{ config("mqtt.client_username", "app_client") }}',
+        password: '{{ config("mqtt.client_password", "Cli3ntMQTT!") }}',
+    });
+
+    mqttClient.on('connect', () => {
+        mqttClient.subscribe('ride/request', { qos: 1 });
+    });
+
+    mqttClient.on('reconnect', () => {
+        console.log('Reconnecting to MQTT broker...');
+    });
+
+    mqttClient.on('message', (topic, payload) => {
+        try {
+            const msg = JSON.parse(payload.toString());
+            if (topic === 'ride/request') {
+                addRideRequest(msg);
+            }
+        } catch (e) {
+            console.error('MQTT message parse error:', e);
+        }
+    });
+
+    function addRideRequest(msg) {
+        if (pendingRequests.has(msg.ride_id)) return;
+        pendingRequests.set(msg.ride_id, msg);
+
+        if (container.querySelector('.no-requests')) {
+            container.innerHTML = '';
+        }
+
+        const card = document.createElement('div');
+        card.id = 'ride-' + msg.ride_id;
+        card.className = 'border-l-4 border-primary bg-gradient-to-r from-primary/5 to-transparent p-6 rounded-xl mb-4 animate-in slide-in-from-right duration-500';
+        card.innerHTML = `
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center">
+                    <img src="${msg.passenger.avatar}" class="h-12 w-12 rounded-full border-2 border-primary/20 mr-4">
+                    <div>
+                        <h4 class="font-black text-primary">${msg.passenger.name}</h4>
+                        <p class="text-sm text-text-secondary">📞 ${msg.passenger.phone}</p>
+                        <p class="text-xs text-text-secondary mt-1">Requested just now</p>
                     </div>
                 </div>
-                
-                <div class="flex gap-3">
-                    <button onclick="acceptRide(${request.id})" class="flex-1 px-4 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition shadow-lg shadow-primary/20">
-                        Accept Ride
-                    </button>
-                    <button onclick="declineRide(${request.id})" class="px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition">
-                        Decline
-                    </button>
+                <div class="text-right">
+                    <div class="text-2xl font-black text-primary">TZS ${Number(msg.fare).toLocaleString()}</div>
+                    <div class="text-xs text-text-secondary">${msg.distance} km</div>
                 </div>
             </div>
-        `).join('');
-        
-        container.innerHTML = requestsHtml;
-        
-        // Play notification sound (if available)
+            <div class="space-y-3 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="h-2.5 w-2.5 rounded-full bg-green-500 ring-4 ring-green-500/20"></div>
+                    <div class="flex-1">
+                        <p class="text-xs font-black text-text-secondary uppercase">Pickup</p>
+                        <p class="text-sm font-bold">${msg.pickup.address}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-primary/20"></div>
+                    <div class="flex-1">
+                        <p class="text-xs font-black text-text-secondary uppercase">Destination</p>
+                        <p class="text-sm font-bold">${msg.destination.address}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="acceptRide(${msg.ride_id})" class="flex-1 px-4 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition shadow-lg shadow-primary/20">
+                    Accept Ride
+                </button>
+                <button onclick="declineRide(${msg.ride_id})" class="px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition">
+                    Decline
+                </button>
+            </div>
+        `;
+        container.prepend(card);
         playNotificationSound();
     }
-    
+
     function showNoRequests() {
-        const container = document.getElementById('ride-requests-container');
         container.innerHTML = `
-            <div class="text-center py-8 text-text-secondary">
-                <div class="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-4">
-                    🛵
-                </div>
+            <div class="no-requests text-center py-8 text-text-secondary">
+                <div class="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-4">🛵</div>
                 <p class="font-medium">Waiting for ride requests...</p>
                 <p class="text-sm text-text-secondary mt-2">You'll receive notifications when passengers request rides</p>
             </div>
         `;
     }
-    
+
+    // Initial load of existing pending requests
+    fetch('/api/ride-requests')
+        .then(r => r.json())
+        .then(data => {
+            if (data.requests && data.requests.length > 0) {
+                data.requests.forEach(r => {
+                    if (!pendingRequests.has(r.id)) {
+                        pendingRequests.set(r.id, r);
+                        addRideRequest({
+                            ride_id: r.id,
+                            passenger: r.user,
+                            pickup: { address: r.pickup_address },
+                            destination: { address: r.dest_address },
+                            fare: r.fare,
+                            distance: r.distance,
+                        });
+                    }
+                });
+            } else {
+                showNoRequests();
+            }
+        })
+        .catch(() => showNoRequests());
+
     window.acceptRide = function(rideId) {
         fetch(`/rides/${rideId}/accept`, {
             method: 'POST',
@@ -264,10 +337,9 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Redirect to ride tracking page
                 window.location.href = `/rides/${rideId}`;
             } else {
-                alert('Unable to accept ride. Please try again.');
+                alert(data.message || 'Unable to accept ride.');
             }
         })
         .catch(error => {
@@ -275,9 +347,9 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Error accepting ride. Please try again.');
         });
     };
-    
+
     window.declineRide = function(rideId) {
-        if (confirm('Are you sure you want to decline this ride request?')) {
+        if (confirm('Decline this ride request?')) {
             fetch(`/rides/${rideId}/decline`, {
                 method: 'POST',
                 headers: {
@@ -288,8 +360,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Remove the request from display
-                    checkRideRequests();
+                    const card = document.getElementById('ride-' + rideId);
+                    if (card) card.remove();
+                    pendingRequests.delete(rideId);
+                    if (pendingRequests.size === 0) showNoRequests();
                 }
             })
             .catch(error => {
@@ -297,28 +371,22 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     };
-    
+
     function playNotificationSound() {
-        // Create a simple beep sound
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.5);
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 800;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.5);
+        } catch(e) {}
     }
-    
-    // Initial check
-    checkRideRequests();
 });
 </script>
 @endif

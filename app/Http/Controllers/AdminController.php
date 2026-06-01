@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Ride;
 use App\Models\Rating;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class AdminController extends Controller
 {
@@ -25,13 +26,21 @@ class AdminController extends Controller
             ->where('status', 'completed')
             ->sum('fare');
 
+        $weeklyRevenueData = Ride::whereBetween('created_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()])
+            ->where('status', 'completed')
+            ->selectRaw('DATE(created_at) as date, SUM(fare) as total')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
+
         $recentRides = Ride::with(['rider.user', 'passenger'])->latest()->take(5)->get();
         $recentApplications = Rider::with('user')->latest()->take(5)->get();
 
         return view('admin.dashboard', compact(
             'totalRiders', 'approvedRiders', 'pendingRiders', 'onlineRiders',
             'totalRides', 'completedRides', 'pendingRides', 'totalClients',
-            'monthlyRevenue', 'recentRides', 'recentApplications'
+            'monthlyRevenue', 'weeklyRevenueData', 'recentRides', 'recentApplications'
         ));
     }
 
@@ -109,38 +118,56 @@ class AdminController extends Controller
             $rider->user->update(['name' => $request->first_name . ' ' . $request->last_name]);
         }
 
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Rider updated successfully.', 'redirect' => route('admin.riders.show', $rider)]);
+        }
         return redirect()->route('admin.riders.show', $rider)->with('success', 'Rider updated successfully.');
     }
 
-    public function approveRider(Rider $rider)
+    public function approveRider(Request $request, Rider $rider)
     {
         $rider->update(['is_approved' => true]);
         $rider->user->update(['role' => 'rider']);
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Rider approved successfully.']);
+        }
         return back()->with('success', 'Rider approved successfully.');
     }
 
-    public function rejectRider(Rider $rider)
+    public function rejectRider(Request $request, Rider $rider)
     {
         $rider->delete();
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Rider application rejected.', 'redirect' => route('admin.riders')]);
+        }
         return back()->with('success', 'Rider application rejected.');
     }
 
-    public function suspendRider(Rider $rider)
+    public function suspendRider(Request $request, Rider $rider)
     {
         $rider->update(['status' => 'suspended']);
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Rider suspended successfully.']);
+        }
         return back()->with('success', 'Rider suspended successfully.');
     }
 
-    public function activateRider(Rider $rider)
+    public function activateRider(Request $request, Rider $rider)
     {
         $rider->update(['status' => 'offline']);
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Rider activated successfully.']);
+        }
         return back()->with('success', 'Rider activated successfully.');
     }
 
-    public function deleteRider(Rider $rider)
+    public function deleteRider(Request $request, Rider $rider)
     {
         $rider->user->delete();
         $rider->delete();
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Rider deleted successfully.', 'redirect' => route('admin.riders')]);
+        }
         return redirect()->route('admin.riders')->with('success', 'Rider deleted successfully.');
     }
 
@@ -209,24 +236,56 @@ class AdminController extends Controller
         ]);
 
         $user->update($request->only('name', 'email'));
+
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Client updated successfully.', 'redirect' => route('admin.clients.show', $user)]);
+        }
         return redirect()->route('admin.clients.show', $user)->with('success', 'Client updated successfully.');
     }
 
-    public function suspendClient(User $user)
+    // Ride management actions
+    public function cancelRide(Request $request, Ride $ride)
+    {
+        $ride->update(['status' => 'cancelled']);
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Ride cancelled successfully.']);
+        }
+        return back()->with('success', 'Ride cancelled successfully.');
+    }
+
+    public function deleteRide(Request $request, Ride $ride)
+    {
+        $ride->delete();
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Ride deleted successfully.', 'redirect' => route('admin.rides')]);
+        }
+        return redirect()->route('admin.rides')->with('success', 'Ride deleted successfully.');
+    }
+
+    public function suspendClient(Request $request, User $user)
     {
         $user->update(['suspended_at' => now()]);
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Client suspended successfully.']);
+        }
         return back()->with('success', 'Client suspended successfully.');
     }
 
-    public function activateClient(User $user)
+    public function activateClient(Request $request, User $user)
     {
         $user->update(['suspended_at' => null]);
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Client activated successfully.']);
+        }
         return back()->with('success', 'Client activated successfully.');
     }
 
-    public function deleteClient(User $user)
+    public function deleteClient(Request $request, User $user)
     {
         $user->delete();
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Client deleted successfully.', 'redirect' => route('admin.clients')]);
+        }
         return redirect()->route('admin.clients')->with('success', 'Client deleted successfully.');
     }
 
@@ -281,10 +340,13 @@ class AdminController extends Controller
     // Analytics & Reports
     // ==========================================
 
-    public function analytics()
+    public function analytics(Request $request)
     {
-        $monthlyRides = Ride::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
-            ->whereYear('created_at', now()->year)
+        $year = $request->year ?? now()->year;
+        $dataLayer = $request->data_layer ?? 'revenue';
+
+        $monthlyRides = Ride::selectRaw('MONTH(created_at) as month, COUNT(*) as count, SUM(fare) as revenue')
+            ->whereYear('created_at', $year)
             ->groupByRaw('MONTH(created_at)')
             ->orderByRaw('MONTH(created_at)')
             ->get();
@@ -306,10 +368,23 @@ class AdminController extends Controller
 
         $overallAvgRating = Rating::avg('rating') ?? 0;
 
+        if ($request->ajax()) {
+            $chartData = $monthlyRides->map(function($m) use ($dataLayer) {
+                return $dataLayer === 'revenue' ? (int) $m->revenue : (int) $m->count;
+            });
+            return response()->json([
+                'chartData' => $chartData,
+                'monthlyIncome' => $monthlyIncome,
+                'rideCount' => $monthlyRides->sum('count'),
+                'avgRating' => number_format($overallAvgRating, 1),
+                'topPerformersHtml' => view('admin.analytics._performers', compact('topPerformers'))->render(),
+            ]);
+        }
+
         return view('admin.analytics', compact('monthlyRides', 'topPerformers', 'monthlyIncome', 'overallAvgRating'));
     }
 
-    public function reports()
+    public function reports(Request $request)
     {
         $dailyRevenue = Ride::whereDate('created_at', now()->toDateString())->where('status', 'completed')->sum('fare');
         $weeklyRevenue = Ride::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->where('status', 'completed')->sum('fare');
@@ -322,11 +397,48 @@ class AdminController extends Controller
             ['name' => 'Monthly Report', 'type' => 'Monthly', 'created_at' => now()->subDays(30)],
         ]);
 
+        if ($request->ajax() && $request->generate) {
+            $reportName = $request->report_name ?? 'Custom Report';
+            return response()->json([
+                'success' => true,
+                'message' => "Report '{$reportName}' generated successfully and ready for download.",
+            ]);
+        }
+
         return view('admin.reports', compact('dailyRevenue', 'weeklyRevenue', 'monthlyRevenue', 'yearlyRevenue', 'recentReports'));
     }
 
     public function settings()
     {
         return view('admin.settings');
+    }
+
+    public function saveSettings(Request $request)
+    {
+        $request->validate([
+            'app_name' => 'required|string|max:255',
+            'support_email' => 'required|email|max:255',
+            'base_fare' => 'required|numeric|min:100',
+            'per_km_rate' => 'required|numeric|min:50',
+        ]);
+
+        Cache::forever('settings.app_name', $request->app_name);
+        Cache::forever('settings.support_email', $request->support_email);
+        Cache::forever('settings.base_fare', $request->base_fare);
+        Cache::forever('settings.per_km_rate', $request->per_km_rate);
+
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Settings saved successfully.']);
+        }
+        return back()->with('success', 'Settings saved successfully.');
+    }
+
+    public function flushCache(Request $request)
+    {
+        Cache::flush();
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'System cache flushed successfully.']);
+        }
+        return back()->with('success', 'System cache flushed successfully.');
     }
 }

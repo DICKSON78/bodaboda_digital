@@ -210,17 +210,6 @@
         .trust-strip { display:flex; align-items:center; justify-content:center; gap:20px; margin-top:18px; }
         .trust-item { display:flex; align-items:center; gap:6px; color:#b0bdb5; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; }
 
-        /* ── Progress bar ── */
-        .progress-wrap {
-            position: fixed; top:0; left:0; width:100%; height:3px;
-            background: rgba(47,107,63,0.12); z-index:9999;
-            opacity:0; visibility:hidden; transition:opacity 0.2s;
-        }
-        .progress-wrap.active { opacity:1; visibility:visible; }
-        .progress-bar { height:100%; background:linear-gradient(90deg,#1e4d2b,#3E8E5A,#1e4d2b); background-size:200%; }
-        .progress-bar.running { animation:progSlide 1.3s ease-in-out infinite, gradMove 1.5s linear infinite; width:100%; }
-        @keyframes progSlide { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
-
         /* ── Modal ── */
         .modal {
             position:fixed; inset:0; background:rgba(0,0,0,0.5);
@@ -255,11 +244,6 @@
     </style>
 </head>
 <body>
-
-<!-- Progress Bar -->
-<div class="progress-wrap" id="progressWrap">
-    <div class="progress-bar" id="progressBar"></div>
-</div>
 
 <!-- ════════ LEFT — GREEN BRAND PANEL ════════ -->
 <div class="left-panel">
@@ -351,16 +335,7 @@
                 </div>
 
                 <!-- Errors -->
-                @if($errors->any())
-                <div class="alert-base alert-error fade-up" style="margin-top:18px;">
-                    <i class="fas fa-exclamation-circle" style="margin-top:1px;flex-shrink:0;"></i>
-                    <div>
-                        @foreach($errors->all() as $err)
-                        <p>{{ $err }}</p>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
+                <div id="login-errors" class="alert-base alert-error fade-up" style="margin-top:18px;display:none;"></div>
 
                 @if(session('success'))
                 <div class="alert-base alert-success fade-up" style="margin-top:18px;">
@@ -552,26 +527,55 @@
         }
     }
 
-    document.getElementById('login-form').addEventListener('submit', function() {
-        const wrap = document.getElementById('progressWrap');
-        const bar  = document.getElementById('progressBar');
-        const btn  = document.getElementById('submit-btn');
-        wrap.classList.add('active');
-        bar.classList.add('running');
-        btn.disabled = true;
-        document.getElementById('submit-icon').className = 'fas fa-spinner fa-spin';
-        document.getElementById('submit-text').textContent = 'Signing In…';
-    });
+    function setLoading(loading) {
+        const btn = document.getElementById('submit-btn');
+        const icn = document.getElementById('submit-icon');
+        const txt = document.getElementById('submit-text');
+        if (!btn) return;
+        btn.disabled = loading;
+        icn.className = loading ? 'fas fa-spinner fa-spin' : 'fas fa-sign-in-alt';
+        txt.textContent = loading ? 'Signing In…' : 'Sign In';
+    }
 
-    window.addEventListener('pageshow', e => {
-        if (e.persisted) {
-            document.getElementById('progressWrap').classList.remove('active');
-            document.getElementById('progressBar').classList.remove('running');
-            const btn = document.getElementById('submit-btn');
-            btn.disabled = false;
-            document.getElementById('submit-icon').className = 'fas fa-sign-in-alt';
-            document.getElementById('submit-text').textContent = 'Sign In';
+    function showLoginErrors(errors) {
+        const container = document.getElementById('login-errors');
+        if (!container) return;
+        if (!errors || errors.length === 0) {
+            container.style.display = 'none';
+            return;
         }
+        container.innerHTML = '<i class="fas fa-exclamation-circle" style="margin-top:1px;flex-shrink:0;"></i><div>' +
+            errors.map(e => '<p>' + e + '</p>').join('') + '</div>';
+        container.style.display = 'flex';
+        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        setLoading(true);
+        showLoginErrors([]);
+
+        fetch(this.action, {
+            method: 'POST',
+            body: new FormData(this),
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        })
+        .then(r => r.json().then(d => ({ status: r.status, data: d })))
+        .then(({ status, data }) => {
+            if (status === 200 && data.redirect) {
+                window.location.href = data.redirect;
+            } else {
+                setLoading(false);
+                const errs = data.errors
+                    ? Object.values(data.errors).flat()
+                    : data.message ? [data.message] : ['Login failed. Please try again.'];
+                showLoginErrors(errs);
+            }
+        })
+        .catch(() => {
+            setLoading(false);
+            showLoginErrors(['Network error. Please try again.']);
+        });
     });
 
     document.getElementById('reset-form').addEventListener('submit', function(e) {
@@ -626,7 +630,12 @@
         openModal('alert-modal');
     }
 
-    document.addEventListener('DOMContentLoaded', () => document.getElementById('email')?.focus());
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('email')?.focus();
+        @if($errors->any())
+        showLoginErrors([@foreach($errors->all() as $err)'{{ $err }}',@endforeach]);
+        @endif
+    });
 </script>
 </body>
 </html>

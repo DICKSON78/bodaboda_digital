@@ -102,16 +102,15 @@
         </div>
     </div>
     <div class="p-6">
-        <form class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+        <form id="analyticsForm" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
             <div class="space-y-2">
                 <label class="flex items-center gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
                     <i class="fas fa-calendar-alt text-[10px] text-[#2F6B3F]"></i>
                     Temporal Range
                 </label>
-                <select class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all cursor-pointer">
-                    <option>Fiscal Year 2026</option>
-                    <option>Quarterly (Q1-Q4)</option>
-                    <option>Monthly Snapshot</option>
+                <select name="year" class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all cursor-pointer">
+                    <option value="{{ now()->year }}">Fiscal Year {{ now()->year }}</option>
+                    <option value="{{ now()->year - 1 }}">Fiscal Year {{ now()->year - 1 }}</option>
                 </select>
             </div>
             <div class="space-y-2">
@@ -119,10 +118,9 @@
                     <i class="fas fa-microchip text-[10px] text-[#2F6B3F]"></i>
                     Data Layer
                 </label>
-                <select class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all cursor-pointer">
-                    <option>Revenue Flow</option>
-                    <option>Trip Velocity</option>
-                    <option>Rider Quality</option>
+                <select name="data_layer" class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all cursor-pointer">
+                    <option value="trips">Trip Velocity</option>
+                    <option value="revenue">Revenue Flow</option>
                 </select>
             </div>
             <div class="space-y-2">
@@ -132,11 +130,10 @@
                 </label>
                 <select class="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2F6B3F]/20 focus:border-[#2F6B3F] transition-all cursor-pointer">
                     <option>Standard View</option>
-                    <option>Detailed PDF</option>
                     <option>Raw CSV Data</option>
                 </select>
             </div>
-            <button type="button" class="h-12 px-4 rounded-xl bg-[#2F6B3F] text-xs font-bold text-white hover:bg-[#235031] transition-all flex items-center justify-center gap-2 shadow-md">
+            <button id="refreshAnalytics" type="button" class="h-12 px-4 rounded-xl bg-[#2F6B3F] text-xs font-bold text-white hover:bg-[#235031] transition-all flex items-center justify-center gap-2 shadow-md">
                 <i class="fas fa-sync text-[11px]"></i> REFRESH ANALYSIS
             </button>
         </form>
@@ -231,23 +228,19 @@
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('ridesChart').getContext('2d');
-    
+const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const ridesCanvas = document.getElementById('ridesChart');
+if (ridesCanvas) {
+    const ctx = ridesCanvas.getContext('2d');
     const monthlyData = @json($monthlyRides);
-    const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const data = new Array(12).fill(0);
     
     monthlyData.forEach(item => {
-        data[item.month - 1] = item.count;
+        data[item.month - 1] = parseInt(item.count);
     });
 
-    // Create gradient for bars
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, '#2F6B3F');
-    gradient.addColorStop(1, '#235031');
-
-    new Chart(ctx, {
+    const ridesChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
@@ -298,6 +291,33 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-});
+
+    // Filter refresh
+    document.getElementById('refreshAnalytics')?.addEventListener('click', function() {
+        const selects = document.querySelectorAll('#analyticsForm select');
+        const params = new URLSearchParams();
+        params.set('ajax', '1');
+        selects.forEach(s => { if (s.name) params.set(s.name, s.value); });
+
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+
+        fetch('{{ route('admin.analytics') }}?' + params.toString(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const chartData = data.chartData.map(v => parseInt(v));
+            ridesChart.data.datasets[0].data = chartData;
+            ridesChart.update();
+            showFlashMessage('Analytics refreshed', 'success');
+        })
+        .catch(() => showFlashMessage('Failed to refresh analytics', 'error'))
+        .finally(() => {
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-sync text-[11px]"></i> REFRESH ANALYSIS';
+        });
+    });
+}
 </script>
 @endsection

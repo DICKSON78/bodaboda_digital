@@ -68,7 +68,7 @@
                                 <i class="fas fa-flag-checkered text-rose-600 text-sm"></i>
                             </div>
                             <div>
-                                <p class="text-sm text-slate-900 font-bold leading-relaxed">{{ $ride->dropoff_address ?? 'Spatial coordinate data unavailable' }}</p>
+                                 <p class="text-sm text-slate-900 font-bold leading-relaxed">{{ $ride->destination_address ?? 'Spatial coordinate data unavailable' }}</p>
                                 <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Destination Target</p>
                             </div>
                         </div>
@@ -80,18 +80,28 @@
                         <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Spatial Span</p>
                         <p class="text-xl font-black text-slate-900">{{ number_format($ride->distance ?? 0, 1) }} <span class="text-[10px]">KM</span></p>
                     </div>
-                    <div>
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Temporal Span</p>
-                        <p class="text-xl font-black text-slate-900">{{ $ride->duration ?? '--' }} <span class="text-[10px]">MIN</span></p>
-                    </div>
+                         <div>
+                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Temporal Span</p>
+                             @php
+                                 $durationInMinutes = null;
+                                 if ($ride->trip_started_at && $ride->trip_completed_at) {
+                                     $durationInMinutes = $ride->trip_started_at->diffInMinutes($ride->trip_completed_at);
+                                 } elseif ($ride->accepted_at && $ride->trip_completed_at) {
+                                     $durationInMinutes = $ride->accepted_at->diffInMinutes($ride->trip_completed_at);
+                                 } elseif ($ride->created_at && $ride->trip_completed_at) {
+                                     $durationInMinutes = $ride->created_at->diffInMinutes($ride->trip_completed_at);
+                                 }
+                             @endphp
+                             <p class="text-xl font-black text-slate-900">{{ $durationInMinutes ?? '--' }} <span class="text-[10px]">MIN</span></p>
+                         </div>
                     <div>
                         <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Yield Unit</p>
                         <p class="text-xl font-black text-[#2F6B3F]">{{ number_format($ride->fare, 0) }}</p>
                     </div>
-                    <div>
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Transaction</p>
-                        <p class="text-base font-black text-slate-900 uppercase tracking-tighter">{{ $ride->payment_method ?? 'Cash' }}</p>
-                    </div>
+                         <div>
+                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Transaction</p>
+                             <p class="text-base font-black text-slate-900 uppercase tracking-tighter">Cash</p>
+                         </div>
                 </div>
             </div>
         </div>
@@ -169,6 +179,38 @@
                         <p class="font-black text-slate-900 text-sm">{{ $ride->passenger->name ?? 'Guest Participant' }}</p>
                         <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Consumer Asset</p>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Clearance -->
+        <div class="bg-rose-50 rounded-2xl shadow-lg border border-rose-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-rose-100 bg-rose-100/30 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-xl bg-rose-600 flex items-center justify-center text-white shadow-lg shadow-rose-500/20">
+                        <i class="fas fa-shield-alt text-sm"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-rose-900 font-bold text-base">Security Clearance</h4>
+                        <p class="text-rose-700/70 text-sm">Mission termination protocol</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6">
+                <p class="text-xs text-rose-700 font-bold uppercase tracking-wider mb-6 flex items-center gap-2">
+                    <i class="fas fa-exclamation-triangle"></i> Caution: These actions affect mission data integrity
+                </p>
+                <div class="flex flex-wrap gap-4">
+                    @if($ride->status !== 'cancelled')
+                    <button onclick="showConfirmModal('cancel', '{{ route('admin.ride.cancel', $ride) }}', 'Ride #{{ $ride->id }}')"
+                            class="h-11 px-6 rounded-xl border border-rose-200 bg-white text-[11px] font-black text-rose-600 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all shadow-sm capitalize tracking-tight flex items-center gap-2">
+                        <i class="fas fa-ban text-xs"></i> Cancel Ride
+                    </button>
+                    @endif
+                    <button onclick="showConfirmModal('delete', '{{ route('admin.ride.delete', $ride) }}', 'Ride #{{ $ride->id }}', 'DELETE')"
+                            class="h-11 px-6 rounded-xl border border-rose-200 bg-white text-[11px] font-black text-rose-600 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all shadow-sm capitalize tracking-tight flex items-center gap-2">
+                        <i class="fas fa-trash-alt text-xs"></i> Delete Ride Record
+                    </button>
                 </div>
             </div>
         </div>

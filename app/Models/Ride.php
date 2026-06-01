@@ -12,12 +12,21 @@ class Ride extends Model
     protected $fillable = [
         'passenger_id',
         'rider_id',
+        'driver_id',
         'pickup_lat',
         'pickup_lng',
         'dest_lat',
         'dest_lng',
+        'pickup_address',
+        'destination_address',
         'fare',
+        'distance',
         'status',
+        'ride_token',
+        'accepted_at',
+        'driver_arrived_at',
+        'trip_started_at',
+        'trip_completed_at',
     ];
 
     public function passenger()

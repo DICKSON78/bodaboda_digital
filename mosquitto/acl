@@ -1,0 +1,11 @@
+# BodaBoda MQTT Access Control
+# app_server: backend publishing
+# app_client: browser clients
+
+user app_server
+topic write #
+
+user app_client
+topic read ride/request
+topic read ride/status/+/+
+topic read driver/location/+/+

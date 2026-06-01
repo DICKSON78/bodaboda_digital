@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Rider;
+use App\Services\GeoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -68,7 +69,7 @@ class RiderController extends Controller
         return redirect()->route('dashboard')->with('success', 'Your application has been submitted and is pending approval.');
     }
 
-    public function toggleStatus()
+    public function toggleStatus(GeoService $geo)
     {
         $rider = Auth::user()->rider;
         
@@ -78,6 +79,12 @@ class RiderController extends Controller
 
         $rider->status = $rider->status === 'online' ? 'offline' : 'online';
         $rider->save();
+
+        if ($rider->status === 'online' && $rider->current_lat && $rider->current_lng) {
+            $geo->setLocation($rider->id, $rider->current_lat, $rider->current_lng);
+        } else {
+            $geo->removeLocation($rider->id);
+        }
 
         return back()->with('success', 'Status updated to ' . $rider->status);
     }

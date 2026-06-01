@@ -83,7 +83,7 @@
                     </div>
                     <div class="fare-meta">
                         <span>🕒 <span id="eta-display">~5 min</span></span>
-                        <span>⚡ Boda Express</span>
+                        <span id="surge-badge" class="hidden">🔥 <span id="surge-display">1.0x</span></span>
                         <span>🛵 <span id="nearby-count">0</span> nearby</span>
                     </div>
                     <p class="fare-note">Final fare may vary based on traffic</p>
@@ -933,6 +933,7 @@ body {
     padding: 24px;
 }
 
+.hidden { display: none !important; }
 .modal-overlay.hidden { display: none !important; }
 
 .modal-card {
@@ -1528,7 +1529,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
-                body: JSON.stringify({ distance: dist })
+                body: JSON.stringify({ distance: dist, pickup_lat: pickupMarker.getLatLng().lat, pickup_lng: pickupMarker.getLatLng().lng })
             })
             .then(r => r.json())
             .then(data => {
@@ -1538,6 +1539,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('fare-container').classList.remove('hidden');
                 document.getElementById('distance-display').textContent = dist.toFixed(1) + ' km';
                 document.getElementById('fare-display').textContent     = 'TZS ' + data.formatted_fare;
+                if (data.surge > 1) {
+                    const sb = document.getElementById('surge-badge');
+                    sb.classList.remove('hidden');
+                    document.getElementById('surge-display').textContent = data.surge.toFixed(1) + 'x';
+                }
                 document.getElementById('eta-display').textContent      = `~${eta} min`;
                 document.getElementById('nearby-count').textContent     = nearby;
                 document.getElementById('submit-btn').disabled          = false;

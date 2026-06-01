@@ -16,12 +16,14 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Create admin user
-        User::factory()->create([
-            'name'     => 'Admin User',
-            'email'    => 'admin@bodaboda.com',
-            'password' => bcrypt('admin123'),
-            'role'     => 'admin',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'admin@bodaboda.com'],
+            [
+                'name'     => 'Admin User',
+                'password' => bcrypt('admin1234'),
+                'role'     => 'admin',
+            ]
+        );
 
         // Create test passengers for CI
         User::factory()->createMany([
@@ -106,6 +108,7 @@ class DatabaseSeeder extends Seeder
                 'dest_lng'     => 39.2830,
                 'fare'         => 5000,
                 'status'       => 'completed',
+                'ride_token'   => \Illuminate\Support\Str::uuid(),
                 'created_at'   => now()->subHours(2),
                 'updated_at'   => now()->subHours(1),
             ],
@@ -118,6 +121,7 @@ class DatabaseSeeder extends Seeder
                 'dest_lng'     => 39.2900,
                 'fare'         => 3000,
                 'status'       => 'ongoing',
+                'ride_token'   => \Illuminate\Support\Str::uuid(),
                 'created_at'   => now()->subMinutes(30),
                 'updated_at'   => now()->subMinutes(15),
             ],
@@ -130,6 +134,7 @@ class DatabaseSeeder extends Seeder
                 'dest_lng'     => 39.2950,
                 'fare'         => 7000,
                 'status'       => 'completed',
+                'ride_token'   => \Illuminate\Support\Str::uuid(),
                 'created_at'   => now()->subHours(4),
                 'updated_at'   => now()->subHours(3),
             ],

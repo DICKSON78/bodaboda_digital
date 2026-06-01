@@ -1,0 +1,30 @@
+groups:
+  - name: bodaboda
+    interval: 30s
+    rules:
+      - alert: NoActiveRiders
+        expr: bodaboda_riders_online_current == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Zero riders online"
+          description: "No riders are online for 5+ minutes. Dispatch will fail."
+
+      - alert: GeoIndexEmpty
+        expr: bodaboda_redis_geo_count == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis geo-index empty"
+          description: "Redis riders:online set is empty - dispatches will use fallback."
+
+      - alert: HighAuthFailures
+        expr: rate(bodaboda_mqtt_auth_failures[5m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High MQTT auth failure rate"
+          description: "MQTT auth failures > 10/sec - possible attack or misconfigured clients."

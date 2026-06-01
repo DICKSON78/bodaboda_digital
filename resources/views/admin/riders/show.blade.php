@@ -59,11 +59,15 @@
                                 <i class="fas {{ $rider->status === 'suspended' ? 'fa-user-check' : 'fa-user-slash' }} mr-2"></i> {{ $rider->status === 'suspended' ? 'Activate Operator' : 'Suspend Operator' }}
                             </button>
                         @else
-                            <button onclick="showConfirmModal('approve', '{{ route('admin.rider.approve', $rider) }}', '{{ $rider->user->name }}')" 
-                                    class="h-11 px-6 bg-emerald-600 text-white rounded-xl text-xs font-black capitalize tracking-tight hover:bg-emerald-700 transition-all shadow-lg flex items-center">
-                                <i class="fas fa-check-double mr-2"></i> Approve Application
-                            </button>
-                        @endif
+                             <button onclick="showConfirmModal('approve', '{{ route('admin.rider.approve', $rider) }}', '{{ $rider->user->name }}')" 
+                                     class="h-11 px-6 bg-emerald-600 text-white rounded-xl text-xs font-black capitalize tracking-tight hover:bg-emerald-700 transition-all shadow-lg flex items-center">
+                                 <i class="fas fa-check-double mr-2"></i> Approve Application
+                             </button>
+                             <button onclick="showConfirmModal('reject', '{{ route('admin.rider.reject', $rider) }}', '{{ $rider->user->name }}')" 
+                                     class="h-11 px-6 bg-rose-600 text-white rounded-xl text-xs font-black capitalize tracking-tight hover:bg-rose-700 transition-all shadow-lg flex items-center">
+                                 <i class="fas fa-times-circle mr-2"></i> Reject Application
+                             </button>
+                         @endif
                     </div>
                 </div>
             </div>

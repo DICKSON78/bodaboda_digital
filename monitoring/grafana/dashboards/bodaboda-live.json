@@ -1,0 +1,52 @@
+{
+  "title": "BodaBoda Live",
+  "uid": "bodaboda-live",
+  "version": 1,
+  "panels": [
+    {
+      "title": "Active Rides",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 4, "x": 0, "y": 0},
+      "targets": [{"expr": "bodaboda_rides_active_current", "legendFormat": ""}],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"steps": [{"value": 0, "color": "green"}, {"value": 20, "color": "orange"}, {"value": 50, "color": "red"}]}
+        }
+      }
+    },
+    {
+      "title": "Online Riders",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 4, "x": 4, "y": 0},
+      "targets": [{"expr": "bodaboda_riders_online_current", "legendFormat": ""}],
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"steps": [{"value": 0, "color": "red"}, {"value": 5, "color": "orange"}, {"value": 15, "color": "green"}]}
+        }
+      }
+    },
+    {
+      "title": "Redis Geo Index",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 4, "x": 8, "y": 0},
+      "targets": [{"expr": "bodaboda_redis_geo_count", "legendFormat": ""}]
+    },
+    {
+      "title": "Rides Over Time",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+      "targets": [
+        {"expr": "rate(bodaboda_rides_requested_total[5m])", "legendFormat": "Requested"},
+        {"expr": "rate(bodaboda_rides_completed_total[5m])", "legendFormat": "Completed"}
+      ]
+    },
+    {
+      "title": "Revenue",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+      "targets": [{"expr": "rate(bodaboda_revenue_total[1h])", "legendFormat": "TZS/hr"}]
+    }
+  ]
+}

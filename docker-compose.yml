@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
     tty: true
     ports:
-      - "3306:3306"
+      - "3308:3306"
     environment:
       MYSQL_DATABASE: bodaboda
       MYSQL_ROOT_PASSWORD: root
@@ -55,6 +55,7 @@ services:
       - "9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/alert.rules.yml:/etc/prometheus/alert.rules.yml
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -102,6 +103,31 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     networks:
       - bodaboda-network
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: bodaboda-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto:/mosquitto/config
+      - mosquitto-data:/mosquitto/data
+    networks:
+      - bodaboda-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: bodaboda-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - bodaboda-network
+    command: redis-server --appendonly yes --save 60 1
 
 # Staging Environment Services
   app-staging:
@@ -164,6 +190,7 @@ services:
       - "9091:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/alert.rules.yml:/etc/prometheus/alert.rules.yml
       - prometheus-staging-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -194,6 +221,18 @@ services:
     depends_on:
       - prometheus-staging
 
+  mosquitto-staging:
+    image: eclipse-mosquitto:2
+    container_name: bodaboda-staging-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1884:1883"
+    volumes:
+      - ./mosquitto:/mosquitto/config
+      - mosquitto-staging-data:/mosquitto/data
+    networks:
+      - bodaboda-network
+
   node-exporter-staging:
     image: prom/node-exporter:latest
     container_name: bodaboda-staging-node-exporter
@@ -214,17 +253,16 @@ services:
 
 volumes:
   bodaboda-dbdata:
-    driver: local
-  prometheus-data:
-    driver: local
-  grafana-data:
-    driver: local
   bodaboda-staging-dbdata:
+  mosquitto-data:
     driver: local
+  mosquitto-staging-data:
+    driver: local
+  redis-data:
+  prometheus-data:
   prometheus-staging-data:
-    driver: local
+  grafana-data:
   grafana-staging-data:
-    driver: local
 
 networks:
   bodaboda-network:

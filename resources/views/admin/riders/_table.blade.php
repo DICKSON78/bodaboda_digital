@@ -65,15 +65,27 @@
                     @endif
                 </td>
                 <td>
-                    <div class="flex justify-end gap-2">
-                        <a href="{{ route('admin.riders.show', $rider) }}" class="h-8 w-8 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center transition-colors shadow-sm">
-                            <i class="fas fa-eye text-[10px]"></i>
-                        </a>
-                        <button onclick="showConfirmModal('delete', '{{ route('admin.rider.delete', $rider) }}', '{{ $rider->user->name }}')" 
-                                class="h-8 w-8 rounded-md border border-slate-200 bg-white text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors shadow-sm">
-                            <i class="fas fa-trash-alt text-[10px]"></i>
-                        </button>
-                    </div>
+                     <div class="flex justify-end gap-2">
+                         <a href="{{ route('admin.riders.show', $rider) }}" class="h-8 w-8 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center transition-colors shadow-sm">
+                             <i class="fas fa-eye text-[10px]"></i>
+                         </a>
+                         
+                         @if(!$rider->is_approved)
+                             <button onclick="showConfirmModal('approve', '{{ route('admin.rider.approve', $rider) }}', '{{ $rider->user->name }}')" 
+                                     class="h-8 w-8 rounded-md border border-slate-200 bg-emerald-600 text-white hover:bg-emerald-700 flex items-center justify-center transition-colors shadow-sm">
+                                 <i class="fas fa-check text-[10px]"></i>
+                             </button>
+                             <button onclick="showConfirmModal('reject', '{{ route('admin.rider.reject', $rider) }}', '{{ $rider->user->name }}')" 
+                                     class="h-8 w-8 rounded-md border border-slate-200 bg-red-600 text-white hover:bg-red-700 flex items-center justify-center transition-colors shadow-sm">
+                                 <i class="fas fa-times text-[10px]"></i>
+                             </button>
+                         @else
+                             <button onclick="showConfirmModal('delete', '{{ route('admin.rider.delete', $rider) }}', '{{ $rider->user->name }}', 'DELETE')" 
+                                     class="h-8 w-8 rounded-md border border-slate-200 bg-white text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors shadow-sm">
+                                 <i class="fas fa-trash-alt text-[10px]"></i>
+                             </button>
+                         @endif
+                     </div>
                 </td>
             </tr>
             @empty

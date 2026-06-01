@@ -19,12 +19,20 @@ class DashboardController extends Controller
         $recentRides = [];
         $stats = [];
 
+        $activeRide = null;
+
         if ($user->role === 'passenger') {
             $recentRides = Ride::where('passenger_id', $user->id)
                                 ->latest()
                                 ->take(5)
                                 ->get();
             
+            $activeRide = Ride::where('passenger_id', $user->id)
+                            ->whereIn('status', ['requested', 'accepted', 'ongoing'])
+                            ->with('rider.user')
+                            ->latest()
+                            ->first();
+
             $stats = [
                 'total_rides' => Ride::where('passenger_id', $user->id)->count(),
                 'completed_rides' => Ride::where('passenger_id', $user->id)->where('status', 'completed')->count(),
@@ -42,6 +50,6 @@ class DashboardController extends Controller
             ];
         }
 
-        return view('dashboard', compact('user', 'recentRides', 'stats'));
+        return view('dashboard', compact('user', 'recentRides', 'stats', 'activeRide'));
     }
 }
