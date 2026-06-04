@@ -18,6 +18,7 @@ class RideLifecycleTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
 
         $this->passengerId = DB::table('users')->insertGetId([
             'name' => 'Test Passenger',

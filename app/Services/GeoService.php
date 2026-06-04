@@ -27,11 +27,7 @@ class GeoService
             $lat,
             $radiusKm,
             'km',
-            'WITHDIST',
-            'WITHCOORD',
-            'COUNT',
-            $limit,
-            'ASC'
+            ['WITHDIST', 'WITHCOORD', 'COUNT' => $limit, 'ASC']
         );
 
         if (!$results) return [];
@@ -71,7 +67,9 @@ class GeoService
 
     public function isOnline(int $riderId): bool
     {
-        return Redis::zrank($this->onlineKey, (string) $riderId) !== null;
+        $rank = Redis::zrank($this->onlineKey, (string) $riderId);
+
+        return $rank !== null && $rank !== false;
     }
 
     public function clearAll(): void
