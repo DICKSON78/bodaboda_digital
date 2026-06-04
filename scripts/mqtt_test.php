@@ -33,7 +33,10 @@ echo "----------------------------------------\n";
 try {
     $client = new MqttClient($host, $port, $testId);
 
-    $settings = (new ConnectionSettings)->setKeepAliveInterval(30);
+    $settings = (new ConnectionSettings)
+        ->setKeepAliveInterval(30)
+        ->setConnectTimeout(5)
+        ->setSocketTimeout(5);
     if ($mqttUser) {
         $settings->setUsername($mqttUser)->setPassword($mqttPass);
         echo " [OK] Using authenticated connection\n";
@@ -55,6 +58,9 @@ try {
             echo " [OK] Pub/Sub cycle verified!\n";
         }
     }, MqttClient::QOS_AT_LEAST_ONCE);
+
+    // Process the subscribe packet so it's sent to the broker before we publish
+    $client->loopOnce(0, false);
 
     // Publish ping
     $client->publish(
@@ -80,14 +86,19 @@ try {
     );
     echo " [OK] Published to test/response\n";
 
-    // Loop briefly to receive the message
-    $client->loop(false);
+    // Poll for the response with a maximum timeout of 10 seconds
+    $maxWait = 10;
+    $start = time();
+    while (!$received && (time() - $start) < $maxWait) {
+        $client->loopOnce(0, false);
+        usleep(100000); // 100ms between iterations
+    }
 
     $client->disconnect();
     echo " [OK] Disconnected\n";
 
     if (!$received) {
-        echo " [FAIL] Did not receive response message\n";
+        echo " [FAIL] Did not receive response message within {$maxWait}s\n";
         exit(1);
     }
 

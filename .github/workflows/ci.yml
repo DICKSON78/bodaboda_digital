@@ -57,9 +57,10 @@ jobs:
             --entrypoint /bin/sh \
             eclipse-mosquitto:2 \
             -c "echo 'listener 1883' > /mosquitto/config/mosquitto.conf && echo 'allow_anonymous true' >> /mosquitto/config/mosquitto.conf && exec /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf"
+          echo "Waiting for Mosquitto to accept connections..."
           for i in $(seq 1 10); do
-            if docker exec mosquitto mosquitto_sub -t test -C 1 -W 3 2>/dev/null; then
-              echo "Mosquitto ready"
+            if timeout 2 bash -c 'echo > /dev/tcp/127.0.0.1/1883' 2>/dev/null; then
+              echo "Mosquitto ready (port 1883 accepting connections)"
               break
             fi
             echo "Waiting for Mosquitto... attempt $i"
@@ -128,6 +129,7 @@ jobs:
           kill $SERVER_PID || true
 
       - name: MQTT Connection Test
+        timeout-minutes: 2
         run: |
           echo "Testing MQTT broker connection..."
           php scripts/mqtt_test.php 127.0.0.1 1883
