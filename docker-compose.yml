@@ -1,4 +1,8 @@
 services:
+
+  # ─────────────────────────────────────────
+  # APPLICATION (PHP-FPM)
+  # ─────────────────────────────────────────
   app:
     build:
       context: .
@@ -6,22 +10,60 @@ services:
     image: bodaboda-app
     container_name: bodaboda-app
     restart: unless-stopped
-    tty: true
+    working_dir: /var/www
     environment:
       SERVICE_NAME: app
       SERVICE_TAGS: dev
-    working_dir: /var/www
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: bodaboda
+      DB_USERNAME: bodaboda_user
+      DB_PASSWORD: root
+      MQTT_HOST: mosquitto
+      MQTT_PORT: 1883
+      CACHE_DRIVER: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: sync
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     volumes:
       - ./:/var/www
       - ./.env.docker:/var/www/.env
     networks:
       - bodaboda-network
+    depends_on:
+      - db
+      - redis
+      - mosquitto
 
+  # ─────────────────────────────────────────
+  # NGINX WEB SERVER
+  # ─────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: bodaboda-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - bodaboda-network
+    depends_on:
+      - app
+
+  # ─────────────────────────────────────────
+  # MYSQL DATABASE
+  # ─────────────────────────────────────────
   db:
     image: mysql:8.0
     container_name: bodaboda-db
     restart: unless-stopped
-    tty: true
     ports:
       - "3308:3306"
     environment:
@@ -34,19 +76,41 @@ services:
     networks:
       - bodaboda-network
 
-  nginx:
-    image: nginx:alpine
-    container_name: bodaboda-nginx
+  # ─────────────────────────────────────────
+  # MQTT BROKER (Mosquitto)
+  # ─────────────────────────────────────────
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: bodaboda-mosquitto
     restart: unless-stopped
-    tty: true
     ports:
-      - "8000:80"
+      - "1883:1883"
+      - "9001:9001"
     volumes:
-      - ./:/var/www
-      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - ./mosquitto:/mosquitto/config
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-logs:/mosquitto/log
     networks:
       - bodaboda-network
 
+  # ─────────────────────────────────────────
+  # REDIS (Cache & Sessions)
+  # ─────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: bodaboda-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - bodaboda-network
+    command: redis-server --appendonly yes --save 60 1
+
+  # ─────────────────────────────────────────
+  # PROMETHEUS (Metrics Collection)
+  # ─────────────────────────────────────────
   prometheus:
     image: prom/prometheus:latest
     container_name: bodaboda-prometheus
@@ -67,6 +131,9 @@ services:
     networks:
       - bodaboda-network
 
+  # ─────────────────────────────────────────
+  # GRAFANA (Monitoring Dashboard)
+  # ─────────────────────────────────────────
   grafana:
     image: grafana/grafana:latest
     container_name: bodaboda-grafana
@@ -86,6 +153,9 @@ services:
     depends_on:
       - prometheus
 
+  # ─────────────────────────────────────────
+  # NODE EXPORTER (System Metrics)
+  # ─────────────────────────────────────────
   node-exporter:
     image: prom/node-exporter:latest
     container_name: bodaboda-node-exporter
@@ -104,165 +174,15 @@ services:
     networks:
       - bodaboda-network
 
-  mosquitto:
-    image: eclipse-mosquitto:2
-    container_name: bodaboda-mosquitto
-    restart: unless-stopped
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-    volumes:
-      - ./mosquitto:/mosquitto/config
-      - mosquitto-data:/mosquitto/data
-    networks:
-      - bodaboda-network
-
-  redis:
-    image: redis:7-alpine
-    container_name: bodaboda-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    networks:
-      - bodaboda-network
-    command: redis-server --appendonly yes --save 60 1
-
-# Staging Environment Services
-  app-staging:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: bodaboda-app
-    container_name: bodaboda-staging-app
-    restart: unless-stopped
-    working_dir: /var/www
-    environment:
-      SERVICE_NAME: app-staging
-      SERVICE_TAGS: staging
-      APP_ENV: staging
-      APP_DEBUG: "false"
-      APP_URL: http://localhost:8001
-    volumes:
-      - ./:/var/www
-      - ./.env.docker:/var/www/.env
-    networks:
-      - bodaboda-network
-    depends_on:
-      - db-staging
-
-  db-staging:
-    image: mysql:8.0
-    container_name: bodaboda-staging-db
-    restart: unless-stopped
-    ports:
-      - "3307:3306"
-    environment:
-      MYSQL_DATABASE: bodaboda_staging
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_PASSWORD: root
-      MYSQL_USER: bodaboda_user
-    volumes:
-      - bodaboda-staging-dbdata:/var/lib/mysql/
-    networks:
-      - bodaboda-network
-
-  nginx-staging:
-    image: nginx:alpine
-    container_name: bodaboda-staging-nginx
-    restart: unless-stopped
-    ports:
-      - "8001:80"
-    volumes:
-      - ./:/var/www
-      - ./nginx/conf.d/:/etc/nginx/conf.d/
-    networks:
-      - bodaboda-network
-    depends_on:
-      - app-staging
-
-  prometheus-staging:
-    image: prom/prometheus:latest
-    container_name: bodaboda-staging-prometheus
-    restart: unless-stopped
-    ports:
-      - "9091:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./monitoring/alert.rules.yml:/etc/prometheus/alert.rules.yml
-      - prometheus-staging-data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
-    networks:
-      - bodaboda-network
-
-  grafana-staging:
-    image: grafana/grafana:latest
-    container_name: bodaboda-staging-grafana
-    restart: unless-stopped
-    ports:
-      - "3002:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
-    volumes:
-      - grafana-staging-data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
-    networks:
-      - bodaboda-network
-    depends_on:
-      - prometheus-staging
-
-  mosquitto-staging:
-    image: eclipse-mosquitto:2
-    container_name: bodaboda-staging-mosquitto
-    restart: unless-stopped
-    ports:
-      - "1884:1883"
-    volumes:
-      - ./mosquitto:/mosquitto/config
-      - mosquitto-staging-data:/mosquitto/data
-    networks:
-      - bodaboda-network
-
-  node-exporter-staging:
-    image: prom/node-exporter:latest
-    container_name: bodaboda-staging-node-exporter
-    restart: unless-stopped
-    ports:
-      - "9101:9100"
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.rootfs=/rootfs'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-    networks:
-      - bodaboda-network
-
 volumes:
   bodaboda-dbdata:
-  bodaboda-staging-dbdata:
   mosquitto-data:
     driver: local
-  mosquitto-staging-data:
+  mosquitto-logs:
     driver: local
   redis-data:
   prometheus-data:
-  prometheus-staging-data:
   grafana-data:
-  grafana-staging-data:
 
 networks:
   bodaboda-network:

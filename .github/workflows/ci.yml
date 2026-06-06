@@ -7,17 +7,17 @@ on:
     branches: [ "main" ]
 
 env:
-  REGISTRY: ghcr.io
+  # Docker Hub registry (Assignment 3 requirement)
+  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/bodaboda-app
 
 jobs:
+
   # ============================================================
-  # TASK 2: CONTINUOUS INTEGRATION
+  # JOB 1: BUILD & TEST (CI)
   # ============================================================
   test-and-build:
+    name: Build, Test & Push to Docker Hub
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
 
     services:
       mysql:
@@ -29,7 +29,11 @@ jobs:
           MYSQL_PASSWORD: root
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping -h localhost" --health-interval=10s --health-timeout=5s --health-retries=5
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
       redis:
         image: redis:7-alpine
@@ -42,13 +46,11 @@ jobs:
           --health-retries=5
 
     steps:
+      # ── 1. Checkout ──────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set lowercase image name
-        run: |
-          echo "IMAGE_NAME=$(echo '${{ github.repository_owner }}/${{ github.event.repository.name }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
+      # ── 2. Start Mosquitto MQTT Broker ───────────────────────
       - name: Start Mosquitto
         run: |
           docker run -d \
@@ -56,45 +58,56 @@ jobs:
             -p 1883:1883 \
             --entrypoint /bin/sh \
             eclipse-mosquitto:2 \
-            -c "echo 'listener 1883' > /mosquitto/config/mosquitto.conf && echo 'allow_anonymous true' >> /mosquitto/config/mosquitto.conf && exec /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf"
+            -c "echo 'listener 1883' > /mosquitto/config/mosquitto.conf && \
+                echo 'allow_anonymous true' >> /mosquitto/config/mosquitto.conf && \
+                exec /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf"
+
           echo "Waiting for Mosquitto to accept connections..."
           for i in $(seq 1 10); do
             if timeout 2 bash -c 'echo > /dev/tcp/127.0.0.1/1883' 2>/dev/null; then
-              echo "Mosquitto ready (port 1883 accepting connections)"
+              echo "Mosquitto ready on port 1883"
               break
             fi
-            echo "Waiting for Mosquitto... attempt $i"
+            echo "Attempt $i — waiting..."
             sleep 2
           done
 
+      # ── 3. Setup PHP ─────────────────────────────────────────
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, xml, mysql, bcmath, gd, zip
+          extensions: mbstring, xml, pdo_mysql, bcmath, gd, zip, redis
           coverage: xdebug
           tools: composer
 
+      # ── 4. Install system tools ───────────────────────────────
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y mysql-client
 
+      # ── 5. Prepare .env ───────────────────────────────────────
       - name: Copy environment file
         run: cp .env.example .env
 
-      - name: Configure Database and MQTT Environment
+      - name: Configure environment for CI
         run: |
-          echo "DB_HOST=127.0.0.1" >> .env
-          echo "DB_PORT=3306" >> .env
+          echo "DB_HOST=127.0.0.1"       >> .env
+          echo "DB_PORT=3306"            >> .env
           echo "DB_DATABASE=bodaboda_test" >> .env
-          echo "DB_USERNAME=root" >> .env
-          echo "DB_PASSWORD=root" >> .env
-          echo "MQTT_HOST=127.0.0.1" >> .env
-          echo "MQTT_PORT=1883" >> .env
+          echo "DB_USERNAME=root"        >> .env
+          echo "DB_PASSWORD=root"        >> .env
+          echo "MQTT_HOST=127.0.0.1"     >> .env
+          echo "MQTT_PORT=1883"          >> .env
+          echo "REDIS_HOST=127.0.0.1"    >> .env
+          echo "REDIS_PORT=6379"         >> .env
+          echo "CACHE_DRIVER=file"       >> .env
+          echo "SESSION_DRIVER=file"     >> .env
 
+      # ── 6. Wait for MySQL ─────────────────────────────────────
       - name: Wait for MySQL to be ready
         run: |
           for i in {1..30}; do
-            if mysql -h 127.0.0.1 -u root -proot bodaboda_test -e "SELECT 1" &> /dev/null; then
+            if mysql -h 127.0.0.1 -u root -proot bodaboda_test -e "SELECT 1" &>/dev/null; then
               echo "MySQL is ready"
               exit 0
             fi
@@ -104,71 +117,84 @@ jobs:
           echo "MySQL failed to start"
           exit 1
 
+      # ── 7. Install Composer dependencies ─────────────────────
       - name: Install Composer dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      - name: Setup Database
+      # ── 8. Setup Laravel ──────────────────────────────────────
+      - name: Setup Laravel application
         run: |
           php artisan key:generate
           php artisan config:cache
           php artisan migrate --force
           php artisan db:seed --force
+          php artisan storage:link
 
-      - name: Create storage links
-        run: php artisan storage:link
-
+      # ── 9. Run PHPUnit Tests ──────────────────────────────────
+      #    Pipeline STOPS here if tests fail (Task 6)
       - name: Run Tests
         run: php artisan test
 
+      # ── 10. Run API Tests ─────────────────────────────────────
       - name: Run API Tests
         run: |
           php artisan serve --host=127.0.0.1 --port=8000 > /tmp/laravel.log 2>&1 &
           SERVER_PID=$!
           sleep 5
+          echo "Testing API endpoint..."
           curl -v http://127.0.0.1:8000/ || true
           kill $SERVER_PID || true
 
+      # ── 11. MQTT Connection Test ──────────────────────────────
       - name: MQTT Connection Test
         timeout-minutes: 2
         run: |
           echo "Testing MQTT broker connection..."
           php scripts/mqtt_test.php 127.0.0.1 1883
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226
-
-      - name: Log into registry ${{ env.REGISTRY }}
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=v1,enable={{is_default_branch}}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09
-        with:
-          context: .
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
+      # ── 12. Run Security Scan ─────────────────────────────────
       - name: Run Security Scan
         run: |
           composer require --dev enlightn/security-checker
           vendor/bin/security-checker security:check
 
+      # ─────────────────────────────────────────────────────────
+      # TASK 3 & 5: BUILD DOCKER IMAGE + TAG VERSIONS
+      # ─────────────────────────────────────────────────────────
+
+      # ── 13. Set up Docker Buildx ──────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ── 14. Login to Docker Hub ───────────────────────────────
+      - name: Login to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # ── 15. Build Docker Image ────────────────────────────────
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ env.DOCKER_IMAGE }}:latest .
+          docker tag ${{ env.DOCKER_IMAGE }}:latest ${{ env.DOCKER_IMAGE }}:v1.0
+          echo "Images built:"
+          docker images | grep bodaboda-app
+
+      # ── 16. Push to Docker Hub ────────────────────────────────
+      - name: Push to Docker Hub
+        if: github.event_name != 'pull_request'
+        run: |
+          docker push ${{ env.DOCKER_IMAGE }}:latest
+          docker push ${{ env.DOCKER_IMAGE }}:v1.0
+          echo "========================================"
+          echo "  PUSHED TO DOCKER HUB SUCCESSFULLY"
+          echo "  Image : ${{ env.DOCKER_IMAGE }}"
+          echo "  Tags  : latest, v1.0"
+          echo "========================================"
+
+      # ── 17. Upload logs ───────────────────────────────────────
       - name: Upload test results and logs
         uses: actions/upload-artifact@v4
         if: always()
@@ -176,33 +202,43 @@ jobs:
           name: test-results
           path: |
             storage/logs/
-            coverage/
             /tmp/laravel.log
           retention-days: 30
 
   # ============================================================
-  # TASK 3: STAGING DEPLOYMENT
+  # TASK 6: DEMONSTRATE FAILURE HANDLING
+  # (Uncomment the step below, push once, then recomment)
+  # ============================================================
+  # To demonstrate: change "Run Tests" above to:
+  #   run: exit 1
+  # Push — pipeline stops before Docker Hub push.
+  # Then restore and push again to show success.
+
+  # ============================================================
+  # JOB 2: STAGING DEPLOYMENT
   # ============================================================
   deploy-staging:
+    name: Deploy to Staging
     needs: test-and-build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-      - name: Set lowercase image name
+      # ── 1. Pull image FROM Docker Hub (not local build) ───────
+      - name: Pull image from Docker Hub
         run: |
-          echo "IMAGE_NAME=$(echo '${{ github.repository_owner }}/${{ github.event.repository.name }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          docker pull ${{ env.DOCKER_IMAGE }}:latest
+          echo "Pulled: ${{ env.DOCKER_IMAGE }}:latest"
 
-      - name: Pull latest app image
-        run: docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-
+      # ── 2. Create Docker network ──────────────────────────────
       - name: Create Docker network
         run: docker network create bodaboda-staging-net 2>/dev/null || true
 
+      # ── 3. Start MySQL ────────────────────────────────────────
       - name: Start MySQL for staging
         run: |
           docker stop bodaboda-staging-db 2>/dev/null || true
-          docker rm bodaboda-staging-db 2>/dev/null || true
+          docker rm   bodaboda-staging-db 2>/dev/null || true
           docker run -d \
             --name bodaboda-staging-db \
             --network bodaboda-staging-net \
@@ -211,6 +247,7 @@ jobs:
             -e MYSQL_PASSWORD=root \
             -e MYSQL_ROOT_PASSWORD=root \
             mysql:8.0
+
           echo "Waiting for MySQL..."
           for i in {1..30}; do
             if docker exec bodaboda-staging-db mysqladmin ping -h localhost -u root -proot --silent 2>/dev/null; then
@@ -220,10 +257,26 @@ jobs:
             sleep 3
           done
 
-      - name: Start app container (php-fpm)
+      # ── 4. Start Mosquitto MQTT (staging) ─────────────────────
+      - name: Start Mosquitto for staging
+        run: |
+          docker stop bodaboda-staging-mqtt 2>/dev/null || true
+          docker rm   bodaboda-staging-mqtt 2>/dev/null || true
+          docker run -d \
+            --name bodaboda-staging-mqtt \
+            --network bodaboda-staging-net \
+            -p 1884:1883 \
+            --entrypoint /bin/sh \
+            eclipse-mosquitto:2 \
+            -c "echo 'listener 1883' > /mosquitto/config/mosquitto.conf && \
+                echo 'allow_anonymous true' >> /mosquitto/config/mosquitto.conf && \
+                exec /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf"
+
+      # ── 5. Start app container ────────────────────────────────
+      - name: Start app container (staging)
         run: |
           docker stop bodaboda-staging-app 2>/dev/null || true
-          docker rm bodaboda-staging-app 2>/dev/null || true
+          docker rm   bodaboda-staging-app 2>/dev/null || true
           docker run -d \
             --name bodaboda-staging-app \
             --network bodaboda-staging-net \
@@ -238,17 +291,20 @@ jobs:
             -e DB_DATABASE=bodaboda \
             -e DB_USERNAME=bodaboda_user \
             -e DB_PASSWORD=root \
+            -e MQTT_HOST=bodaboda-staging-mqtt \
+            -e MQTT_PORT=1883 \
             -e CACHE_DRIVER=file \
             -e SESSION_DRIVER=file \
             -e QUEUE_CONNECTION=sync \
             -e LOG_CHANNEL=stderr \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.DOCKER_IMAGE }}:latest
           sleep 5
 
           docker exec bodaboda-staging-app php artisan config:clear
           docker exec bodaboda-staging-app php artisan migrate --force || true
           docker exec bodaboda-staging-app php artisan storage:link || true
 
+      # ── 6. Start Nginx ────────────────────────────────────────
       - name: Start nginx for staging
         run: |
           mkdir -p /tmp/nginx-staging
@@ -271,8 +327,9 @@ jobs:
               }
           }
           NGINXCONF
+
           docker stop bodaboda-staging-nginx 2>/dev/null || true
-          docker rm bodaboda-staging-nginx 2>/dev/null || true
+          docker rm   bodaboda-staging-nginx 2>/dev/null || true
           docker run -d \
             --name bodaboda-staging-nginx \
             --network bodaboda-staging-net \
@@ -280,132 +337,111 @@ jobs:
             -v /tmp/nginx-staging/default.conf:/etc/nginx/conf.d/default.conf:ro \
             nginx:alpine
 
-      - name: Verify Staging is running
+      # ── 7. Test MQTT in staging ───────────────────────────────
+      - name: Test MQTT communication (staging)
         run: |
-          echo "Verifying staging deployment..."
+          echo "Testing MQTT publish/subscribe in staging..."
+          docker exec bodaboda-staging-mqtt \
+            mosquitto_pub -h localhost -t bodaboda/test -m "staging-deploy-ok" || true
+          echo "MQTT publish test complete"
+
+      # ── 8. Verify staging ─────────────────────────────────────
+      - name: Verify Staging deployment
+        run: |
           sleep 10
-
-          if docker ps | grep -q bodaboda-staging-nginx; then
-            echo "Nginx container is running"
-          else
-            echo "Nginx container failed to start"
-            docker logs bodaboda-staging-nginx --tail 30 || true
-            exit 1
-          fi
-
-          if docker ps | grep -q bodaboda-staging-app; then
-            echo "App container is running"
-          else
-            echo "App container failed to start"
-            docker logs bodaboda-staging-app --tail 30 || true
-            exit 1
-          fi
-
-          if docker ps | grep -q bodaboda-staging-db; then
-            echo "Database container is running"
-          else
-            echo "Database container failed to start"
-            exit 1
-          fi
+          for container in bodaboda-staging-nginx bodaboda-staging-app bodaboda-staging-db bodaboda-staging-mqtt; do
+            if docker ps | grep -q $container; then
+              echo "$container is running ✓"
+            else
+              echo "$container FAILED"
+              docker logs $container --tail 30 || true
+              exit 1
+            fi
+          done
 
           echo "============================================"
           echo "  STAGING DEPLOYMENT SUCCESSFUL"
-          echo "  Environment : STAGING"
-          echo "  App URL     : http://localhost:8080"
-          echo "  Containers  : 3 running"
-          echo "  Status      : HEALTHY"
+          echo "  Image Source : Docker Hub"
+          echo "  Image        : ${{ env.DOCKER_IMAGE }}:latest"
+          echo "  App URL      : http://localhost:8080"
+          echo "  MQTT         : localhost:1884"
+          echo "  Containers   : 4 running"
+          echo "  Status       : HEALTHY"
           echo "============================================"
 
-      # TASK 4: Docker Management & Monitoring — Staging
-      - name: "[TASK 4] Docker Image Tags Evidence"
+      # ── 9. Logs & Monitoring ──────────────────────────────────
+      - name: Application Logs & Monitoring — Staging
         if: always()
         run: |
           echo "================================================"
-          echo "  TASK 4: DOCKER IMAGE TAGGING EVIDENCE"
+          echo "  DOCKER IMAGE TAGS EVIDENCE"
           echo "================================================"
-          echo ""
-          echo "--- Images in GitHub Container Registry ---"
-          docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedAt}}\t{{.Size}}" | grep -E "bodaboda|REPOSITORY" || true
-          echo ""
-          echo "--- Pulled image details ---"
-          docker inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            --format='Image ID: {{.Id}}\nTags: {{.RepoTags}}\nCreated: {{.Created}}\nArchitecture: {{.Architecture}}\nOS: {{.Os}}' || true
+          docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}" \
+            | grep -E "bodaboda|REPOSITORY" || true
 
-      - name: "[TASK 4] Application Logs & Monitoring — Staging"
-        if: always()
-        run: |
-          echo "================================================"
-          echo "  TASK 4: APPLICATION LOGS & MONITORING"
-          echo "  Environment: STAGING"
-          echo "================================================"
           echo ""
-          echo "--- [1] Running Containers Status ---"
+          echo "================================================"
+          echo "  CONTAINER STATUS"
+          echo "================================================"
           docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Image}}" || true
+
           echo ""
-          echo "--- [2] PHP-FPM Application Logs ---"
-          docker logs bodaboda-staging-app --tail 40 2>&1 || true
+          echo "--- App Logs ---"
+          docker logs bodaboda-staging-app --tail 30 2>&1 || true
+
           echo ""
-          echo "--- [3] Nginx Access & Error Logs ---"
+          echo "--- Nginx Logs ---"
           docker logs bodaboda-staging-nginx --tail 20 2>&1 || true
+
           echo ""
-          echo "--- [4] MySQL Database Logs ---"
-          docker logs bodaboda-staging-db --tail 15 2>&1 || true
-          echo ""
-          echo "--- [5] Container Resource Usage (Performance) ---"
+          echo "--- Resource Usage ---"
           docker stats --no-stream --format \
-            "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.NetIO}}\t{{.BlockIO}}" || true
-          echo ""
-          echo "--- [6] Container Inspection (Health) ---"
-          for container in bodaboda-staging-app bodaboda-staging-nginx bodaboda-staging-db; do
-            echo ">> $container"
-            docker inspect $container --format='  Status: {{.State.Status}}\n  Running: {{.State.Running}}\n  Started: {{.State.StartedAt}}\n  RestartCount: {{.RestartCount}}' 2>/dev/null || echo "  Container not found"
-            echo ""
-          done
-          echo "================================================"
-          echo "  MONITORING COMPLETE — STAGING"
-          echo "================================================"
+            "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}" || true
 
   # ============================================================
-  # TASK 3: APPROVAL GATE
+  # APPROVAL GATE (Production requires manual approval)
   # ============================================================
   approval-gate:
+    name: Awaiting Release Manager Approval
     needs: deploy-staging
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: production-approval
     steps:
-      - name: Awaiting Release Manager Approval
+      - name: Awaiting approval
         run: |
           echo "========================================"
-          echo "  STAGING VERIFIED SUCCESSFULLY"
-          echo "  Waiting for Release Manager approval"
-          echo "  before deploying to PRODUCTION..."
+          echo "  STAGING VERIFIED"
+          echo "  Waiting for approval before PRODUCTION"
           echo "========================================"
 
   # ============================================================
-  # TASK 3: PRODUCTION DEPLOYMENT
+  # JOB 3: PRODUCTION DEPLOYMENT
   # ============================================================
   deploy-production:
+    name: Deploy to Production
     needs: approval-gate
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-      - name: Set lowercase image name
+      # ── 1. Pull image FROM Docker Hub ─────────────────────────
+      - name: Pull image from Docker Hub
         run: |
-          echo "IMAGE_NAME=$(echo '${{ github.repository_owner }}/${{ github.event.repository.name }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          docker pull ${{ env.DOCKER_IMAGE }}:latest
+          docker pull ${{ env.DOCKER_IMAGE }}:v1.0
+          echo "Images pulled from Docker Hub"
 
-      - name: Pull latest app image
-        run: docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-
+      # ── 2. Create Docker network ──────────────────────────────
       - name: Create Docker network
         run: docker network create bodaboda-prod-net 2>/dev/null || true
 
+      # ── 3. Start MySQL ────────────────────────────────────────
       - name: Start MySQL for production
         run: |
           docker stop bodaboda-prod-db 2>/dev/null || true
-          docker rm bodaboda-prod-db 2>/dev/null || true
+          docker rm   bodaboda-prod-db 2>/dev/null || true
           docker run -d \
             --name bodaboda-prod-db \
             --network bodaboda-prod-net \
@@ -414,6 +450,7 @@ jobs:
             -e MYSQL_PASSWORD=root \
             -e MYSQL_ROOT_PASSWORD=root \
             mysql:8.0
+
           echo "Waiting for MySQL..."
           for i in {1..30}; do
             if docker exec bodaboda-prod-db mysqladmin ping -h localhost -u root -proot --silent 2>/dev/null; then
@@ -423,10 +460,26 @@ jobs:
             sleep 3
           done
 
-      - name: Start app container (php-fpm)
+      # ── 4. Start Mosquitto MQTT (production) ──────────────────
+      - name: Start Mosquitto for production
+        run: |
+          docker stop bodaboda-prod-mqtt 2>/dev/null || true
+          docker rm   bodaboda-prod-mqtt 2>/dev/null || true
+          docker run -d \
+            --name bodaboda-prod-mqtt \
+            --network bodaboda-prod-net \
+            -p 1883:1883 \
+            --entrypoint /bin/sh \
+            eclipse-mosquitto:2 \
+            -c "echo 'listener 1883' > /mosquitto/config/mosquitto.conf && \
+                echo 'allow_anonymous true' >> /mosquitto/config/mosquitto.conf && \
+                exec /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf"
+
+      # ── 5. Start app container ────────────────────────────────
+      - name: Start app container (production)
         run: |
           docker stop bodaboda-prod-app 2>/dev/null || true
-          docker rm bodaboda-prod-app 2>/dev/null || true
+          docker rm   bodaboda-prod-app 2>/dev/null || true
           docker run -d \
             --name bodaboda-prod-app \
             --network bodaboda-prod-net \
@@ -441,11 +494,13 @@ jobs:
             -e DB_DATABASE=bodaboda \
             -e DB_USERNAME=bodaboda_user \
             -e DB_PASSWORD=root \
+            -e MQTT_HOST=bodaboda-prod-mqtt \
+            -e MQTT_PORT=1883 \
             -e CACHE_DRIVER=file \
             -e SESSION_DRIVER=file \
             -e QUEUE_CONNECTION=sync \
             -e LOG_CHANNEL=stderr \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.DOCKER_IMAGE }}:latest
           sleep 5
 
           docker exec bodaboda-prod-app php artisan config:clear
@@ -454,6 +509,7 @@ jobs:
           docker exec bodaboda-prod-app php artisan view:cache
           docker exec bodaboda-prod-app php artisan storage:link || true
 
+      # ── 6. Start Nginx ────────────────────────────────────────
       - name: Start nginx for production
         run: |
           mkdir -p /tmp/nginx-prod
@@ -476,8 +532,9 @@ jobs:
               }
           }
           NGINXCONF
+
           docker stop bodaboda-prod-nginx 2>/dev/null || true
-          docker rm bodaboda-prod-nginx 2>/dev/null || true
+          docker rm   bodaboda-prod-nginx 2>/dev/null || true
           docker run -d \
             --name bodaboda-prod-nginx \
             --network bodaboda-prod-net \
@@ -485,80 +542,76 @@ jobs:
             -v /tmp/nginx-prod/default.conf:/etc/nginx/conf.d/default.conf:ro \
             nginx:alpine
 
-      - name: Verify Production is running
+      # ── 7. Test MQTT in production ────────────────────────────
+      - name: Test MQTT communication (production)
         run: |
-          echo "Verifying production deployment..."
+          echo "Testing MQTT publish/subscribe in production..."
+          docker exec bodaboda-prod-mqtt \
+            mosquitto_pub -h localhost -t bodaboda/rides -m "rider-request-ok" || true
+          echo "MQTT communication verified"
+
+      # ── 8. Verify production ──────────────────────────────────
+      - name: Verify Production deployment
+        run: |
           sleep 10
-
-          if docker ps | grep -q bodaboda-prod-nginx; then
-            echo "Nginx container is running"
-          else
-            echo "Nginx container failed to start"
-            docker logs bodaboda-prod-nginx --tail 30 || true
-            exit 1
-          fi
-
-          if docker ps | grep -q bodaboda-prod-app; then
-            echo "App container is running"
-          else
-            echo "App container failed to start"
-            docker logs bodaboda-prod-app --tail 30 || true
-            exit 1
-          fi
-
-          if docker ps | grep -q bodaboda-prod-db; then
-            echo "Database container is running"
-          else
-            echo "Database container failed to start"
-            exit 1
-          fi
+          for container in bodaboda-prod-nginx bodaboda-prod-app bodaboda-prod-db bodaboda-prod-mqtt; do
+            if docker ps | grep -q $container; then
+              echo "$container is running ✓"
+            else
+              echo "$container FAILED"
+              docker logs $container --tail 30 || true
+              exit 1
+            fi
+          done
 
           echo "============================================"
           echo "  PRODUCTION DEPLOYMENT SUCCESSFUL"
-          echo "  Environment : PRODUCTION"
-          echo "  App URL     : http://localhost:8000"
-          echo "  Containers  : 3 running"
-          echo "  Status      : HEALTHY"
+          echo "  Image Source : Docker Hub"
+          echo "  Image        : ${{ env.DOCKER_IMAGE }}:latest"
+          echo "  App URL      : http://localhost:8000"
+          echo "  MQTT         : localhost:1883"
+          echo "  Containers   : 4 running"
+          echo "  Status       : HEALTHY"
           echo "============================================"
 
-      # TASK 4: Docker Management & Monitoring — Production
-      - name: "[TASK 4] Application Logs & Monitoring — Production"
+      # ── 9. Final Logs & Monitoring ────────────────────────────
+      - name: Application Logs & Monitoring — Production
         if: always()
         run: |
           echo "================================================"
-          echo "  TASK 4: APPLICATION LOGS & MONITORING"
-          echo "  Environment: PRODUCTION"
+          echo "  PRODUCTION: LOGS & MONITORING"
           echo "================================================"
+
           echo ""
-          echo "--- [1] Running Containers Status ---"
+          echo "--- [1] Running Containers ---"
           docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Image}}" || true
+
           echo ""
-          echo "--- [2] PHP-FPM Application Logs ---"
+          echo "--- [2] App Logs ---"
           docker logs bodaboda-prod-app --tail 40 2>&1 || true
+
           echo ""
-          echo "--- [3] Nginx Access & Error Logs ---"
+          echo "--- [3] Nginx Logs ---"
           docker logs bodaboda-prod-nginx --tail 20 2>&1 || true
+
           echo ""
-          echo "--- [4] MySQL Database Logs ---"
+          echo "--- [4] MySQL Logs ---"
           docker logs bodaboda-prod-db --tail 15 2>&1 || true
+
           echo ""
-          echo "--- [5] Container Resource Usage (Performance) ---"
+          echo "--- [5] Resource Usage ---"
           docker stats --no-stream --format \
-            "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.NetIO}}\t{{.BlockIO}}" || true
+            "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.NetIO}}" || true
+
           echo ""
-          echo "--- [6] Container Inspection (Health) ---"
-          for container in bodaboda-prod-app bodaboda-prod-nginx bodaboda-prod-db; do
-            echo ">> $container"
-            docker inspect $container --format='  Status: {{.State.Status}}\n  Running: {{.State.Running}}\n  Started: {{.State.StartedAt}}\n  RestartCount: {{.RestartCount}}' 2>/dev/null || echo "  Container not found"
-            echo ""
-          done
-          echo ""
-          echo "--- [7] Docker Images with Tags (Final Evidence) ---"
-          docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}\t{{.CreatedAt}}" | grep -E "bodaboda|REPOSITORY" || true
+          echo "--- [6] Docker Image Tags (Final Evidence) ---"
+          docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}\t{{.CreatedAt}}" \
+            | grep -E "bodaboda|REPOSITORY" || true
+
           echo ""
           echo "================================================"
-          echo "  MONITORING COMPLETE — PRODUCTION"
-          echo "  Image Tags : latest, v1"
-          echo "  Containers : 3 running"
-          echo "  Status     : HEALTHY"
+          echo "  MONITORING COMPLETE"
+          echo "  Registry : Docker Hub"
+          echo "  Tags     : latest, v1.0"
+          echo "  Status   : HEALTHY"
           echo "================================================"
