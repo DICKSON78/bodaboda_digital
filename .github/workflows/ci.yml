@@ -298,9 +298,26 @@ jobs:
             -e QUEUE_CONNECTION=sync \
             -e LOG_CHANNEL=stderr \
             ${{ env.DOCKER_IMAGE }}:latest
-          sleep 5
 
-          docker exec bodaboda-staging-app php artisan config:clear
+          echo "Waiting for bodaboda-staging-app to be healthy..."
+          for i in $(seq 1 15); do
+            STATUS=$(docker inspect --format='{{.State.Status}}' bodaboda-staging-app 2>/dev/null)
+            if [ "$STATUS" = "running" ]; then
+              echo "Container is running"
+              break
+            fi
+            echo "Attempt $i: status=$STATUS — waiting..."
+            sleep 2
+          done
+
+          STATUS=$(docker inspect --format='{{.State.Status}}' bodaboda-staging-app 2>/dev/null)
+          if [ "$STATUS" != "running" ]; then
+            echo "ERROR: Container failed to start (status=$STATUS)"
+            docker logs bodaboda-staging-app --tail 30
+            exit 1
+          fi
+
+          docker exec bodaboda-staging-app php artisan config:clear || true
           docker exec bodaboda-staging-app php artisan migrate --force || true
           docker exec bodaboda-staging-app php artisan storage:link || true
 
@@ -501,12 +518,29 @@ jobs:
             -e QUEUE_CONNECTION=sync \
             -e LOG_CHANNEL=stderr \
             ${{ env.DOCKER_IMAGE }}:latest
-          sleep 5
 
-          docker exec bodaboda-prod-app php artisan config:clear
-          docker exec bodaboda-prod-app php artisan migrate --force
-          docker exec bodaboda-prod-app php artisan config:cache
-          docker exec bodaboda-prod-app php artisan view:cache
+          echo "Waiting for bodaboda-prod-app to be healthy..."
+          for i in $(seq 1 15); do
+            STATUS=$(docker inspect --format='{{.State.Status}}' bodaboda-prod-app 2>/dev/null)
+            if [ "$STATUS" = "running" ]; then
+              echo "Container is running"
+              break
+            fi
+            echo "Attempt $i: status=$STATUS — waiting..."
+            sleep 2
+          done
+
+          STATUS=$(docker inspect --format='{{.State.Status}}' bodaboda-prod-app 2>/dev/null)
+          if [ "$STATUS" != "running" ]; then
+            echo "ERROR: Container failed to start (status=$STATUS)"
+            docker logs bodaboda-prod-app --tail 30
+            exit 1
+          fi
+
+          docker exec bodaboda-prod-app php artisan config:clear || true
+          docker exec bodaboda-prod-app php artisan migrate --force || true
+          docker exec bodaboda-prod-app php artisan config:cache || true
+          docker exec bodaboda-prod-app php artisan view:cache || true
           docker exec bodaboda-prod-app php artisan storage:link || true
 
       # ── 6. Start Nginx ────────────────────────────────────────
