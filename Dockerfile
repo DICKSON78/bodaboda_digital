@@ -77,7 +77,7 @@ command=nginx -g "daemon off;"\n\
 autostart=true\n\
 autorestart=true\n\
 stderr_logfile=/var/log/nginx.err.log\n\
-stdout_logfile=/var/log/nginx.out.log\n' > /etc/supervisor/conf.d/app.conf
+stdout_logfile=/var/log/nginx.out.log\n' > /etc/supervisord.conf
 
 # Write startup script
 RUN printf '#!/bin/bash\n\
