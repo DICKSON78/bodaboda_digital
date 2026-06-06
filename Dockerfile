@@ -87,7 +87,7 @@ php artisan key:generate --force\n\
 php artisan config:clear\n\
 php artisan config:cache\n\
 php artisan view:cache\n\
-php artisan migrate --force\n\
+php artisan migrate --force || true\n\
 php artisan storage:link || true\n\
 exec /usr/bin/supervisord -c /etc/supervisord.conf\n' > /usr/local/bin/start.sh
 
