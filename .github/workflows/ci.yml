@@ -326,14 +326,16 @@ jobs:
         run: |
           mkdir -p /tmp/nginx-staging
           cat > /tmp/nginx-staging/default.conf << 'NGINXCONF'
+          resolver 127.0.0.11 ipv6=off;
           server {
               listen 80;
               index index.php index.html;
               root /var/www/public;
+              set $upstream_app bodaboda-staging-app;
               location ~ \.php$ {
                   try_files $uri =404;
                   fastcgi_split_path_info ^(.+\.php)(/.+)$;
-                  fastcgi_pass bodaboda-staging-app:9000;
+                  fastcgi_pass $upstream_app:9000;
                   fastcgi_index index.php;
                   include fastcgi_params;
                   fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
@@ -548,14 +550,16 @@ jobs:
         run: |
           mkdir -p /tmp/nginx-prod
           cat > /tmp/nginx-prod/default.conf << 'NGINXCONF'
+          resolver 127.0.0.11 ipv6=off;
           server {
               listen 80;
               index index.php index.html;
               root /var/www/public;
+              set $upstream_app bodaboda-prod-app;
               location ~ \.php$ {
                   try_files $uri =404;
                   fastcgi_split_path_info ^(.+\.php)(/.+)$;
-                  fastcgi_pass bodaboda-prod-app:9000;
+                  fastcgi_pass $upstream_app:9000;
                   fastcgi_index index.php;
                   include fastcgi_params;
                   fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
