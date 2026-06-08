@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->timestamp('suspended_at')->nullable()->after('role');
+            $table->timestamp('suspended_at')->nullable();
         });
     }
 

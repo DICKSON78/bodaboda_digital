@@ -20,7 +20,7 @@ return new class extends Migration
             $table->decimal('dest_lat', 10, 8);
             $table->decimal('dest_lng', 11, 8);
             $table->decimal('fare', 10, 2);
-            $table->enum('status', ['requested', 'accepted', 'ongoing', 'completed', 'cancelled'])->default('requested');
+            $table->string('status', 20)->default('requested');
             $table->timestamps();
         });
     }

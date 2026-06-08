@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('password')->nullable();
             $table->string('google_id')->nullable()->unique();
             $table->string('avatar')->nullable();
-            $table->enum('role', ['passenger', 'rider', 'admin'])->default('passenger');
+            $table->string('role', 20)->default('passenger');
             $table->rememberToken();
             $table->timestamps();
         });

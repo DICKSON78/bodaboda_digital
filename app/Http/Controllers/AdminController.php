@@ -345,10 +345,10 @@ class AdminController extends Controller
         $year = $request->year ?? now()->year;
         $dataLayer = $request->data_layer ?? 'revenue';
 
-        $monthlyRides = Ride::selectRaw('MONTH(created_at) as month, COUNT(*) as count, SUM(fare) as revenue')
+        $monthlyRides = Ride::selectRaw("EXTRACT(MONTH FROM created_at) as month, COUNT(*) as count, SUM(fare) as revenue")
             ->whereYear('created_at', $year)
-            ->groupByRaw('MONTH(created_at)')
-            ->orderByRaw('MONTH(created_at)')
+            ->groupByRaw("EXTRACT(MONTH FROM created_at)")
+            ->orderByRaw("EXTRACT(MONTH FROM created_at)")
             ->get();
 
         $topPerformers = Rider::with('user')

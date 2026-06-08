@@ -17,12 +17,13 @@ services:
       APP_ENV: local
       APP_DEBUG: "true"
       APP_URL: http://localhost:8000
-      DB_CONNECTION: mysql
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_DATABASE: bodaboda
-      DB_USERNAME: bodaboda_user
-      DB_PASSWORD: root
+      DB_CONNECTION: pgsql
+      DB_HOST: db.dumnsunvhhnrtffztvda.superbase.co
+      DB_PORT: 5432
+      DB_DATABASE: postgres
+      DB_USERNAME: postgres
+      DB_PASSWORD: Bodaboda2026
+      DB_SSLMODE: require
       MQTT_HOST: mosquitto
       MQTT_PORT: 1883
       CACHE_DRIVER: redis
@@ -36,7 +37,6 @@ services:
     networks:
       - bodaboda-network
     depends_on:
-      - db
       - redis
       - mosquitto
 
@@ -58,23 +58,10 @@ services:
       - app
 
   # ─────────────────────────────────────────
-  # MYSQL DATABASE
+  # POSTGRESQL (Supabase - external)
   # ─────────────────────────────────────────
-  db:
-    image: mysql:8.0
-    container_name: bodaboda-db
-    restart: unless-stopped
-    ports:
-      - "3308:3306"
-    environment:
-      MYSQL_DATABASE: bodaboda
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_PASSWORD: root
-      MYSQL_USER: bodaboda_user
-    volumes:
-      - bodaboda-dbdata:/var/lib/mysql/
-    networks:
-      - bodaboda-network
+  # Database is hosted on Supabase externally.
+  # Connection: postgresql://postgres:Bodaboda2026@db.dumnsunvhhnrtffztvda.superbase.co:5432/postgres
 
   # ─────────────────────────────────────────
   # MQTT BROKER (Mosquitto)
@@ -175,7 +162,6 @@ services:
       - bodaboda-network
 
 volumes:
-  bodaboda-dbdata:
   mosquitto-data:
     driver: local
   mosquitto-logs:

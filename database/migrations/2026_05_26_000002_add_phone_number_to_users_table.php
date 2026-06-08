@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             if (!Schema::hasColumn('users', 'phone_number')) {
-                $table->string('phone_number', 20)->nullable()->after('email');
+                $table->string('phone_number', 20)->nullable();
             }
         });
     }

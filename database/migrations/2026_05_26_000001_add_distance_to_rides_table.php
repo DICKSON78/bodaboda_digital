@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('rides', function (Blueprint $table) {
             if (!Schema::hasColumn('rides', 'distance')) {
-                $table->decimal('distance', 10, 2)->nullable()->after('fare');
+                $table->decimal('distance', 10, 2)->nullable();
             }
         });
     }

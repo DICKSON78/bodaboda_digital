@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('license_number');
             $table->string('bike_plate');
             $table->string('bike_image')->nullable();
-            $table->enum('status', ['online', 'offline'])->default('offline');
+            $table->string('status', 10)->default('offline');
             $table->boolean('is_approved')->default(false);
             $table->timestamps();
         });
