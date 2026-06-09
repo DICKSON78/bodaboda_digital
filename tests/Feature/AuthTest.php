@@ -22,7 +22,11 @@ class AuthTest extends TestCase
     public function test_user_can_register()
     {
         $email = 'testregister_' . uniqid() . '@example.com';
+        $token = 'reg_token_' . uniqid();
+        $this->withSession(['_token' => $token]);
+
         $response = $this->post('/register', [
+            '_token' => $token,
             'name' => 'TestRegisterUser',
             'email' => $email,
             'password' => 'password123',
@@ -41,12 +45,16 @@ class AuthTest extends TestCase
     public function test_user_can_login()
     {
         $email = 'testlogin_' . uniqid() . '@example.com';
+        $token = 'login_token_' . uniqid();
+        $this->withSession(['_token' => $token]);
+
         User::factory()->create([
             'email' => $email,
             'password' => bcrypt('password123'),
         ]);
 
         $response = $this->post('/login', [
+            '_token' => $token,
             'email' => $email,
             'password' => 'password123',
         ]);
@@ -58,12 +66,16 @@ class AuthTest extends TestCase
     public function test_login_fails_with_wrong_password()
     {
         $email = 'testloginfail_' . uniqid() . '@example.com';
+        $token = 'fail_token_' . uniqid();
+        $this->withSession(['_token' => $token]);
+
         User::factory()->create([
             'email' => $email,
             'password' => bcrypt('password123'),
         ]);
 
         $response = $this->post('/login', [
+            '_token' => $token,
             'email' => $email,
             'password' => 'wrongpassword',
         ]);
