@@ -18,11 +18,11 @@ services:
       APP_DEBUG: "true"
       APP_URL: http://localhost:8000
       DB_CONNECTION: pgsql
-      DB_HOST: aws-0-eu-west-1.pooler.supabase.com
-      DB_PORT: 5432
-      DB_DATABASE: postgres
-      DB_USERNAME: postgres.robsnucnpfadhuklmtfy
-      DB_PASSWORD: Bodaboda2026
+      DB_HOST: ${DB_HOST:-aws-0-eu-west-1.pooler.supabase.com}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: ${DB_DATABASE:-postgres}
+      DB_USERNAME: ${DB_USERNAME:-postgres.robsnucnpfadhuklmtfy}
+      DB_PASSWORD: ${DB_PASSWORD:-}
       DB_SSLMODE: require
       MQTT_HOST: mosquitto
       MQTT_PORT: 1883
@@ -61,7 +61,7 @@ services:
   # POSTGRESQL (Supabase - external)
   # ─────────────────────────────────────────
   # Database is hosted on Supabase externally.
-  # Connection: postgresql://postgres.robsnucnpfadhuklmtfy:Bodaboda2026@aws-0-eu-west-1.pooler.supabase.com:5432/postgres
+  # Set DB_* environment variables before running docker-compose.
 
   # ─────────────────────────────────────────
   # MQTT BROKER (Mosquitto)

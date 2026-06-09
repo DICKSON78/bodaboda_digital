@@ -82,4 +82,16 @@ return [
 
     'serialization' => 'json',
 
+    /*
+    |--------------------------------------------------------------------------
+    | Session File Location
+    |--------------------------------------------------------------------------
+    |
+    | When using the "file" session driver, the session files are placed
+    | on disk. The default path is defined here for convenience.
+    |
+    */
+
+    'files' => env('SESSION_FILES_PATH', storage_path('framework/sessions')),
+
 ];

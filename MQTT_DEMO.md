@@ -63,14 +63,14 @@ Open 2 terminals:
 **Terminal 1 — Subscribe to all topics:**
 ```bash
 mosquitto_sub -h localhost -p 1883 \
-  -u app_client -P 'Cli3ntMQTT!' \
+  -u app_client -P 'your_password' \
   -t '#' -v
 ```
 
 **Terminal 2 — Publish a status update:**
 ```bash
 mosquitto_pub -h localhost -p 1883 \
-  -u app_server -P 'B0dab0d@MQTT!' \
+  -u app_server -P 'your_password' \
   -t 'ride/status/2/b1c9101b-fc30-4306-b90e-1be1937f42de' \
   -m '{"status":"accepted","ride_id":2,"ride_token":"b1c9101b-fc30-4306-b90e-1be1937f42de","driver":{"name":"Demo Rider","phone":"255712345678"}}'
 ```
@@ -81,22 +81,22 @@ You'll see the message appear in Terminal 1 instantly.
 
 ```bash
 # Accept
-mosquitto_pub -h localhost -p 1883 -u app_server -P 'B0dab0d@MQTT!' \
+mosquitto_pub -h localhost -p 1883 -u app_server -P 'your_password' \
   -t 'ride/status/2/b1c9101b-fc30-4306-b90e-1be1937f42de' \
   -m '{"status":"accepted","ride_id":2,"ride_token":"b1c9101b-fc30-4306-b90e-1be1937f42de","driver":{"id":1,"name":"Demo","phone":"255712345678","bike_plate":"MC 100 XYZ"}}'
 
 # Driver arriving
-mosquitto_pub -h localhost -p 1883 -u app_server -P 'B0dab0d@MQTT!' \
+mosquitto_pub -h localhost -p 1883 -u app_server -P 'your_password' \
   -t 'ride/status/2/b1c9101b-fc30-4306-b90e-1be1937f42de' \
   -m '{"status":"driver_arriving","ride_id":2,"ride_token":"b1c9101b-fc30-4306-b90e-1be1937f42de"}'
 
 # Trip started
-mosquitto_pub -h localhost -p 1883 -u app_server -P 'B0dab0d@MQTT!' \
+mosquitto_pub -h localhost -p 1883 -u app_server -P 'your_password' \
   -t 'ride/status/2/b1c9101b-fc30-4306-b90e-1be1937f42de' \
   -m '{"status":"ongoing","ride_id":2,"ride_token":"b1c9101b-fc30-4306-b90e-1be1937f42de"}'
 
 # Trip completed
-mosquitto_pub -h localhost -p 1883 -u app_server -P 'B0dab0d@MQTT!' \
+mosquitto_pub -h localhost -p 1883 -u app_server -P 'your_password' \
   -t 'ride/status/2/b1c9101b-fc30-4306-b90e-1be1937f42de' \
   -m '{"status":"completed","ride_id":2,"ride_token":"b1c9101b-fc30-4306-b90e-1be1937f42de","fare":5000}'
 ```
@@ -115,7 +115,7 @@ Postman v10+ has a built-in MQTT client.
    | Broker | `localhost` |
    | Port | `1883` |
    | Username | `app_client` |
-   | Password | `Cli3ntMQTT!` |
+   | Password | `your_password` |
 
 3. **Subscribe** to a ride topic:
 
@@ -247,7 +247,7 @@ All endpoints return:
 RIDE_ID=2
 
 # 1. Monitor MQTT in another terminal:
-#    mosquitto_sub -h localhost -p 1883 -u app_client -P 'Cli3ntMQTT!' -t '#' -v
+#    mosquitto_sub -h localhost -p 1883 -u app_client -P 'your_password' -t '#' -v
 
 # 2. Accept a ride
 curl -s -X POST "http://localhost:8000/api/rides/$RIDE_ID/accept" \
@@ -283,7 +283,7 @@ lat=-6.7924
 for i in $(seq 1 10); do
   lat=$(echo "$lat - 0.0005" | bc)
   mosquitto_pub -h localhost -p 1883 \
-    -u app_server -P 'B0dab0d@MQTT!' \
+    -u app_server -P 'your_password' \
     -t 'driver/location/1' \
     -m "{\"lat\":$lat,\"lng\":39.2083,\"rider_id\":1}"
   sleep 1
@@ -343,8 +343,8 @@ public function test_publishes_accepted_with_ride_token_topic()
 
 | Role | Username | Password |
 |------|----------|----------|
-| MQTT Server publish | `app_server` | `B0dab0d@MQTT!` |
-| MQTT Client subscribe | `app_client` | `Cli3ntMQTT!` |
+| MQTT Server publish | `app_server` | `your_password` |
+| MQTT Client subscribe | `app_client` | `your_password` |
 | Admin web login | `admin@bodaboda.com` | `admin1234` |
 
 ---

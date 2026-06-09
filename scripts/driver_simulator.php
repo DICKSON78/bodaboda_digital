@@ -18,7 +18,7 @@ use PhpMqtt\Client\ConnectionSettings;
  *   password: (none)
  *
  * Example with auth:
- *   php scripts/driver_simulator.php localhost 1883 app_server B0dab0d@MQTT!
+ *   php scripts/driver_simulator.php localhost 1883 your_username your_password
  */
 
 $host = $argv[1] ?? '127.0.0.1';

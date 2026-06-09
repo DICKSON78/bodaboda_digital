@@ -17,7 +17,7 @@ use PhpMqtt\Client\ConnectionSettings;
  *   php scripts/mqtt_test.php 127.0.0.1 1883
  *
  * With auth:
- *   php scripts/mqtt_test.php localhost 1883 app_server B0dab0d@MQTT!
+ *   php scripts/mqtt_test.php localhost 1883 your_username your_password
  */
 
 $host = $argv[1] ?? '127.0.0.1';

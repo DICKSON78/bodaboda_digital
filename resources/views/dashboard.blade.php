@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
         clientId: 'driver_dash_' + Math.random().toString(16).slice(2, 10),
         clean: false,
         username: '{{ config("mqtt.client_username", "app_client") }}',
-        password: '{{ config("mqtt.client_password", "Cli3ntMQTT!") }}',
+        password: '{{ config("mqtt.client_password", "") }}',
     });
 
     mqttClient.on('connect', () => {
