@@ -83,7 +83,7 @@ jobs:
 
       # ── 4. Install system tools ──────────────────────────────
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client redis-tools
 
       # ── 5. Prepare .env (FIXED: localhost instead of 127.0.0.1) ──
       - name: Create .env for CI
