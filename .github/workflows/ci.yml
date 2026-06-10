@@ -96,6 +96,7 @@ jobs:
           echo "DB_DATABASE=bodaboda_test" >> .env
           echo "DB_USERNAME=bodaboda_user" >> .env
           echo "DB_PASSWORD=root"        >> .env
+          echo "DB_SSLMODE=prefer"       >> .env
           echo "MQTT_HOST=localhost"     >> .env
           echo "MQTT_PORT=1883"          >> .env
           echo "REDIS_HOST=localhost"    >> .env
@@ -318,6 +319,7 @@ jobs:
             -e DB_DATABASE=bodaboda \
             -e DB_USERNAME=bodaboda_user \
             -e DB_PASSWORD=root \
+            -e DB_SSLMODE=prefer \
             -e MQTT_HOST=bodaboda-staging-mqtt \
             -e MQTT_PORT=1883 \
             -e CACHE_DRIVER=file \
@@ -560,6 +562,7 @@ jobs:
             -e DB_DATABASE=bodaboda \
             -e DB_USERNAME=bodaboda_user \
             -e DB_PASSWORD=root \
+            -e DB_SSLMODE=prefer \
             -e MQTT_HOST=bodaboda-prod-mqtt \
             -e MQTT_PORT=1883 \
             -e CACHE_DRIVER=file \
