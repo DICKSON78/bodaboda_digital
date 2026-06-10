@@ -49,33 +49,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── 2. Start Mosquitto MQTT Broker (FIXED) ───────────────
+      # ── 2. Start Mosquitto MQTT Broker ─────────────────────────
       - name: Start Mosquitto
         run: |
           docker run -d \
             --name mosquitto \
             -p 1883:1883 \
             eclipse-mosquitto:2
-          
-          # Better health check for Mosquitto
+
           echo "Waiting for Mosquitto to be ready..."
-          for i in {1..15}; do
-            if docker exec mosquitto mosquitto_sub -t test -C 1 -W 1 2>/dev/null & then
-              PID=$!
-              sleep 1
-              if docker exec mosquitto mosquitto_pub -t test -m "ready" 2>/dev/null; then
-                wait $PID 2>/dev/null
-                echo "✓ Mosquitto is ready on port 1883"
-                break
-              fi
-              kill $PID 2>/dev/null
+          for i in $(seq 1 15); do
+            if timeout 2 bash -c 'echo > /dev/tcp/127.0.0.1/1883' 2>/dev/null; then
+              echo "Mosquitto ready on port 1883"
+              break
             fi
-            if [ $i -eq 15 ]; then
-              echo "❌ ERROR: Mosquitto failed to start"
+            if [ "$i" -eq 15 ]; then
+              echo "ERROR: Mosquitto failed to start"
               docker logs mosquitto --tail 20
               exit 1
             fi
-            echo "Attempt $i: Waiting for Mosquitto..."
+            echo "Attempt $i: waiting..."
             sleep 2
           done
 
@@ -292,16 +285,10 @@ jobs:
             eclipse-mosquitto:2
 
           echo "Waiting for Mosquitto (staging)..."
-          for i in {1..15}; do
-            if docker exec bodaboda-staging-mqtt mosquitto_sub -t test -C 1 -W 1 2>/dev/null & then
-              PID=$!
-              sleep 1
-              if docker exec bodaboda-staging-mqtt mosquitto_pub -t test -m "ready" 2>/dev/null; then
-                wait $PID 2>/dev/null
-                echo "✓ Mosquitto ready on port 1884"
-                break
-              fi
-              kill $PID 2>/dev/null
+          for i in $(seq 1 15); do
+            if timeout 2 bash -c 'echo > /dev/tcp/127.0.0.1/1884' 2>/dev/null; then
+              echo "Mosquitto ready on port 1884"
+              break
             fi
             if [ "$i" -eq 15 ]; then
               echo "❌ ERROR: Mosquitto failed to start"
@@ -540,19 +527,13 @@ jobs:
             eclipse-mosquitto:2
 
           echo "Waiting for Mosquitto (production)..."
-          for i in {1..15}; do
-            if docker exec bodaboda-prod-mqtt mosquitto_sub -t test -C 1 -W 1 2>/dev/null & then
-              PID=$!
-              sleep 1
-              if docker exec bodaboda-prod-mqtt mosquitto_pub -t test -m "ready" 2>/dev/null; then
-                wait $PID 2>/dev/null
-                echo "✓ Mosquitto ready on port 1883"
-                break
-              fi
-              kill $PID 2>/dev/null
+          for i in $(seq 1 15); do
+            if timeout 2 bash -c 'echo > /dev/tcp/127.0.0.1/1883' 2>/dev/null; then
+              echo "Mosquitto ready on port 1883"
+              break
             fi
             if [ "$i" -eq 15 ]; then
-              echo "❌ ERROR: Mosquitto failed to start"
+              echo "ERROR: Mosquitto failed to start"
               docker logs bodaboda-prod-mqtt --tail 20
               exit 1
             fi
